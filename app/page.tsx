@@ -30,9 +30,13 @@ function ListCard({ list, onUpvote }: { list: any; onUpvote: (id: number) => voi
 // ----------------------
 function ListGrid({ lists, onUpvote }: { lists: any[]; onUpvote: (id: number) => void }) {
   return (
-    <div
-      className="grid gap-4"
-      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
+    <div 
+      className="grid"
+      style={{ 
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+        gap: '1rem'
+      }}
     >
       {lists.map((l) => (
         <ListCard key={l.id} list={l} onUpvote={onUpvote} />
@@ -86,55 +90,109 @@ function NewListModal({
   if (!isOpen) return null
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal card">
-        <h2>Create a New Movie List</h2>
-        <form onSubmit={handleSubmit} className="grid gap-2">
-          <input
-            type="text"
-            placeholder="List title"
-            value={listTitle}
-            onChange={(e) => setListTitle(e.target.value)}
-          />
+    <div className="modal-overlay" style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div className="modal-content" style={{
+        backgroundColor: 'var(--pico-background-color)',
+        padding: '2rem',
+        borderRadius: '8px',
+        maxWidth: '500px',
+        width: '90%',
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h2>Create Movie List</h2>
+          <button 
+            onClick={onClose}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              fontSize: '1.5rem', 
+              cursor: 'pointer',
+              padding: '0.25rem'
+            }}
+          >
+            ×
+          </button>
+        </header>
 
-          <div className="grid gap-1">
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '1rem' }}>
+            <label htmlFor="listTitle">List Title</label>
             <input
+              id="listTitle"
               type="text"
-              placeholder="Add a movie"
-              value={movieInput}
-              onChange={(e) => setMovieInput(e.target.value)}
+              value={listTitle}
+              onChange={(e) => setListTitle(e.target.value)}
+              placeholder="Enter list title..."
+              required
             />
-            <button type="button" onClick={addMovieToArray}>
-              Add Movie
-            </button>
           </div>
 
-          {movieArray.length > 0 && <p>Movies: {movieArray.join(', ')}</p>}
+          <div style={{ marginBottom: '1rem' }}>
+            <label htmlFor="movieInput">Add Movies</label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                id="movieInput"
+                type="text"
+                value={movieInput}
+                onChange={(e) => setMovieInput(e.target.value)}
+                placeholder="Enter movie title..."
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addMovieToArray())}
+              />
+              <button type="button" onClick={addMovieToArray}>
+                Add
+              </button>
+            </div>
+          </div>
 
-          <div className="flex gap-2">
-            <button type="submit">Create List</button>
-            <button type="button" onClick={onClose} className="secondary">
+          {movieArray.length > 0 && (
+            <div style={{ marginBottom: '1rem' }}>
+              <h4>Movies in this list:</h4>
+              <ul>
+                {movieArray.map((movie, index) => (
+                  <li key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{movie}</span>
+                    <button
+                      type="button"
+                      onClick={() => setMovieArray(prev => prev.filter((_, i) => i !== index))}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: 'var(--pico-del-color)', 
+                        cursor: 'pointer',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <footer style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <button type="button" className="secondary" onClick={onClose}>
               Cancel
             </button>
-          </div>
+            <button type="submit" disabled={!listTitle || movieArray.length === 0}>
+              Create List
+            </button>
+          </footer>
         </form>
       </div>
-      <style jsx>{`
-        .modal-backdrop {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 50;
-        }
-        .modal {
-          max-width: 500px;
-          width: 100%;
-          padding: 1rem;
-        }
-      `}</style>
     </div>
   )
 }
@@ -188,9 +246,19 @@ export default function HomePage() {
 
   return (
     <section className="container">
-      <div className="flex justify-between items-center mb-6">
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <h2>Movie Lists</h2>
-        <button onClick={() => setIsModalOpen(true)}>+ New List</button>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          style={{ 
+            marginTop: '1rem',
+            padding: '0.75rem 1.5rem',
+            fontSize: '1.1rem',
+            fontWeight: 'bold'
+          }}
+        >
+          + Create New List
+        </button>
       </div>
 
       {loading ? <p>Loading lists...</p> : <ListGrid lists={lists} onUpvote={handleUpvote} />}

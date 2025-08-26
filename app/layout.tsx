@@ -7,7 +7,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css" />
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="color-scheme" content="dark" />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.violet.min.css"
+        />
+        <title>Hello world!</title>
       </head>
       <body>
         {/* Sticky Header */}
@@ -33,9 +40,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Footer */}
         <footer className="container-fluid">
           <div className="container">
-            <p style={{ textAlign: 'center', color: 'var(--muted-color)' }}>
-              &copy; {new Date().getFullYear()} Movie Club · Built with Pico + Next.js
-            </p>
           </div>
         </footer>
       </body>

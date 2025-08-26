@@ -26,14 +26,7 @@ A self-hosted web app for creating, sharing, and voting on movie recommendation 
 
 ## 🚀 Getting Started
 
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/yourusername/movie-club.git
-cd movie-club
-```
-
-### 2. Install backend dependencies
+### 2. Install dependencies
 
 **Node / Bun / Deno example**
 
@@ -44,23 +37,13 @@ npm install
 # Bun
 bun install
 
-# Deno
-deno cache index.ts
-```
-
-### 3. Run the backend
+### 3. Create .env
 
 ```bash
-# Node / Bun
-bun run index.ts
-# or
-node index.js
-
-# Deno
-deno run --allow-net --allow-read --allow-write index.ts
+cp .env.example .env
 ```
 
-### 4. Start frontend
+### 4. Start dev
 
 ```bash
 cd frontend
@@ -74,48 +57,12 @@ Visit `http://localhost:3000` (or `5173` for Vite) to see the app.
 
 ## 🗄 Database
 
-- SQLite file: `movies.db` (ignored by Git via `.gitignore`)
-- Tables:
-  - `movies` — movie info, added by users
-  - `votes` — upvotes/downvotes per movie
-
-Optional Prisma schema is in `prisma/schema.prisma` if you want type-safe queries.
-
----
-
-## 📝 Usage
-
-1. Enter a list title and add some movies.
-2. Submit the list to the backend.
-3. Browse all submitted lists and vote on movies you like.
-4. Movie lists are updated in real-time or on refresh.
-
----
-
-## 📦 Notes
-
-- Backend and frontend can run independently.
-- For a quick setup, no authentication is required (all users are "dummy").
-- TMDb or OMDb API keys can be added for fetching real movie metadata.
-
----
-
-## 📂 Project Structure
-
-```
-movie-club/
-├─ backend/       # API server, SQLite database
-├─ frontend/      # React app
-├─ prisma/        # Optional Prisma schema
-├─ .gitignore
-└─ README.md
+### Run migrations (dev)
+```bash
+npm run prisma:migrate
 ```
 
----
-
-## 🔮 Future Enhancements
-
-- User authentication / accounts
-- Real movie metadata integration (TMDb API)
-- Live voting updates via WebSockets
-- Collections / pools for thematic movie lists
+### Generate schema
+```bash
+npm run prisma:generate
+```
