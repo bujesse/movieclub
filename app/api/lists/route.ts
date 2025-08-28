@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -15,16 +15,7 @@ export async function GET() {
     },
   })
 
-  // Calculate total votes per list
-  const result = lists.map((list) => ({
-    id: list.id,
-    title: list.title,
-    createdBy: list.createdBy,
-    movies: list.movies,
-    totalVotes: list.votes.reduce((sum, v) => sum + v.value, 0),
-  }))
-
-  return NextResponse.json(result)
+  return NextResponse.json(lists)
 }
 
 // POST a new movie list with movies
