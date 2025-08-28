@@ -38,8 +38,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
 
         {/* Main Content */}
-        <main className="section" style={{ minHeight: '75vh' }}>
-          <div className="container">{children}</div>
+        <main className="container" style={{ minHeight: '75vh' }}>
+          {children}
         </main>
 
         {/* Footer */}

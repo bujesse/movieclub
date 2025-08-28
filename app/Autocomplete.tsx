@@ -17,7 +17,7 @@ export default function Autocomplete<T>({
   value: string
   onChange: (v: string) => void
   onSelect: (item: T) => void
-  fetchItems: (q: string) => Promise<T[] | null>
+  fetchItems: (q: string) => Promise<T[]>
   getLabel: (item: T) => string
 }) {
   const [open, setOpen] = useState(false)

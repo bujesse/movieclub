@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Autocomplete from './Autocomplete'
-import { fetchTmdb } from '../lib/tmdb'
+import { searchTmdb } from '../lib/tmdb'
 import type { TmdbMovie } from '../types/tmdb'
+import { tmdbImage } from '../lib/tmdb'
 
 export default function NewListModal({
   isOpen,
@@ -98,7 +99,7 @@ export default function NewListModal({
                 placeholder="Search TMDB…"
                 value={movieInput}
                 onChange={setMovieInput}
-                fetchItems={fetchTmdb}
+                fetchItems={searchTmdb}
                 getLabel={labelFor}
                 onSelect={addMovieToArray}
               />
@@ -116,14 +117,7 @@ export default function NewListModal({
                           {movie.poster_path && (
                             <figure className="media-left">
                               <p className="poster image movie-thumb">
-                                <img
-                                  src={
-                                    movie.poster_path
-                                      ? `https://image.tmdb.org/t/p/w200${movie.poster_path}`
-                                      : 'https://via.placeholder.com/100x150'
-                                  }
-                                  alt={movie.title}
-                                />
+                                <img src={tmdbImage(movie.poster_path, 'w200')} alt={movie.title} />
                               </p>
                             </figure>
                           )}

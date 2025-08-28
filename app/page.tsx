@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import NewListModal from './NewListModal'
+import ListCard from './ListCard'
 import { Prisma } from '@prisma/client'
 
-type MovieList = Prisma.MovieListGetPayload<{
+export type MovieListAll = Prisma.MovieListGetPayload<{
   include: {
     movies: true
     votes: true
@@ -12,53 +13,18 @@ type MovieList = Prisma.MovieListGetPayload<{
 }>
 
 // ----------------------
-// List Card Component
-// ----------------------
-function ListCard({ list, onUpvote }: { list: MovieList; onUpvote: (id: number) => void }) {
-  const handleUpvote = (e: React.MouseEvent) => {
-    e.preventDefault()
-    onUpvote(list.id)
-  }
-
-  return (
-    <div className="card">
-      <header className="card-header">
-        <p className="card-header-title">{list.title}</p>
-      </header>
-      <div className="card-content">
-        <div className="content">
-          <small>Created by: {list.createdBy}</small>
-          <ul>
-            {list.movies.map((m: any, i: number) => (
-              <li key={i}>{m.title}</li>
-            ))}
-          </ul>
-          <strong>Votes: {list.votes.reduce((acc, v) => acc + v.value, 0)}</strong>
-        </div>
-      </div>
-      <footer className="card-footer">
-        <a href="#" className="card-footer-item">
-          Upvote
-        </a>
-        <a href="#" className="card-footer-item has-text-danger">
-          Delete
-        </a>
-      </footer>
-    </div>
-  )
-}
-
-// ----------------------
 // List Grid Component
 // ----------------------
-function ListGrid({ lists, onUpvote }: { lists: MovieList[]; onUpvote: (id: number) => void }) {
+function ListGrid({ lists, onUpvote }: { lists: MovieListAll[]; onUpvote: (id: number) => void }) {
   return (
-    <div className="columns is-multiline">
-      {lists.map((l) => (
-        <div key={l.id} className="column is-one-third">
-          <ListCard list={l} onUpvote={onUpvote} />
-        </div>
-      ))}
+    <div className="fixed-grid has-1-cols-mobile	has-2-cols-tablet has-3-cols-widescreen">
+      <div className="grid is-row-gap-5 is-column-gap-4 is-multiline">
+        {lists.map((l) => (
+          <div key={l.id} className="cell">
+            <ListCard list={l} onUpvote={onUpvote} />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -67,7 +33,7 @@ function ListGrid({ lists, onUpvote }: { lists: MovieList[]; onUpvote: (id: numb
 // Home Page
 // ----------------------
 export default function HomePage() {
-  const [lists, setLists] = useState<MovieList[]>([])
+  const [lists, setLists] = useState<MovieListAll[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
