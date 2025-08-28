@@ -29,17 +29,25 @@ export default function NewListModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!listTitle || movieArray.length === 0) return
+
     const payload = {
       title: listTitle,
       createdBy: 'dummyUserId',
-      movies: movieArray.map((m) => ({
-        tmdbId: m.id,
+      movies: movieArray.map((m: any) => ({
+        tmdbId: Number(m.id),
         title: m.title,
-        posterUrl: m.poster_path
-          ? `https://image.tmdb.org/t/p/w200${m.poster_path}`
-          : 'https://via.placeholder.com/150',
+        originalTitle: m.original_title ?? null,
+        originalLanguage: m.original_language ?? null,
+        releaseDate: m.release_date ?? null, // string; server will new Date(...)
+        overview: m.overview ?? null,
+        voteAverage: m.vote_average ?? null,
+        voteCount: m.vote_count ?? null,
+        posterPath: m.poster_path ?? null, // raw TMDb path like "/abc.jpg"
+        backdropPath: m.backdrop_path ?? null,
+        genres: Array.isArray(m.genre_ids) ? m.genre_ids : null, // JSON array of ints
       })),
     }
+
     onCreate(payload)
     setListTitle('')
     setMovieArray([])
@@ -104,6 +112,7 @@ export default function NewListModal({
                     <div>
                       {movieArray.map((movie, index) => (
                         <article key={movie.id ?? index} className="movie-card media box mb-2">
+                          {/* Poster */}
                           {movie.poster_path && (
                             <figure className="media-left">
                               <p className="poster image movie-thumb">
@@ -118,7 +127,7 @@ export default function NewListModal({
                               </p>
                             </figure>
                           )}
-                          {/* Poster */}
+
                           {/* Main content */}
                           <div className="media-content">
                             <p className="is-size-6 mb-1">
