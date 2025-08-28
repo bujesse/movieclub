@@ -29,7 +29,6 @@ pids
 /dist
 /build
 /out
-/lib
 /.vercel
 /.netlify
 /.firebase
