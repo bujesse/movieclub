@@ -5,6 +5,7 @@ import Autocomplete from './Autocomplete'
 import { searchTmdb } from '../lib/tmdb'
 import type { TmdbMovie } from '../types/tmdb'
 import { tmdbImage } from '../lib/tmdb'
+import { useCurrentUser } from './CurrentUserProvider'
 
 export default function NewListModal({
   isOpen,
@@ -15,6 +16,8 @@ export default function NewListModal({
   onClose: () => void
   onCreate: (payload: any) => void
 }) {
+  const me = useCurrentUser()
+  const myEmail = me!.email
   const [listTitle, setListTitle] = useState('')
   const [movieInput, setMovieInput] = useState('')
   const [movieArray, setMovieArray] = useState<TmdbMovie[]>([])
@@ -33,7 +36,7 @@ export default function NewListModal({
 
     const payload = {
       title: listTitle,
-      createdBy: 'dummyUserId',
+      createdBy: myEmail,
       movies: movieArray.map((m: any) => ({
         tmdbId: Number(m.id),
         title: m.title,

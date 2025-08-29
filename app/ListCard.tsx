@@ -7,14 +7,23 @@ import { GENRES } from '../types/tmdb'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
 
-export default function ListCard({ list }: { list: MovieListAll }) {
+export default function ListCard({
+  list,
+  onDelete,
+}: {
+  list: MovieListAll
+  onDelete: (id: number) => void
+}) {
   const me = useCurrentUser()
+  const myEmail = me!.email
   const router = useRouter()
 
   const initialScore = (list.votes ?? []).reduce((a, v) => a + v.value, 0)
   const [score, setScore] = useState(initialScore)
-  const [hasVoted, setHasVoted] = useState(list.votes.some((v) => v.userId === me!.email))
+  const [hasVoted, setHasVoted] = useState(list.votes.some((v) => v.userId === myEmail))
   const [pending, setPending] = useState(false)
+  const [areYouSure, setAreYouSure] = useState(false)
+  const wasCreatedByMe = list.createdBy === myEmail
 
   // Genres (deduped across movies)
   const genreIds = new Set<number>()
@@ -48,8 +57,27 @@ export default function ListCard({ list }: { list: MovieListAll }) {
     }
   }
 
-  const handleDelete = () => {
-    console.log('Delete list', list.id)
+  const handleDelete = async () => {
+    if (!areYouSure) {
+      setAreYouSure(true)
+      setTimeout(() => setAreYouSure(false), 3000)
+      return
+    }
+    if (pending) return
+    setPending(true)
+    try {
+      const res = await fetch(`/api/lists/${list.id}`, { method: 'DELETE' })
+      if (res.status === 401) {
+        // TODO: redirect to your Access-protected login page
+        // router.push("/login")
+        return
+      }
+      if (!res.ok) return
+      onDelete(list.id)
+      router.refresh()
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -182,13 +210,15 @@ export default function ListCard({ list }: { list: MovieListAll }) {
         >
           {pending ? 'Working...' : hasVoted ? 'Upvoted ✓' : '▲ Upvote'}
         </button>
-        <button
-          className="card-footer-item button has-text-danger"
-          onClick={handleDelete}
-          disabled={false}
-        >
-          Delete
-        </button>
+        {wasCreatedByMe && (
+          <button
+            className="card-footer-item button has-text-danger"
+            onClick={handleDelete}
+            disabled={false}
+          >
+            {areYouSure ? 'Are you sure?' : 'Delete'}
+          </button>
+        )}
       </footer>
     </div>
   )

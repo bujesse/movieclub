@@ -9,7 +9,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!id) return new Response('Unauthorized', { status: 401 })
 
   const movieListId = Number(params.id)
-  if (!Number.isFinite(movieListId)) return new Response('Bad list id', { status: 400 })
 
   await prisma.vote.upsert({
     where: { movieListId_userId: { movieListId, userId: id.email } },
@@ -31,7 +30,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!id) return new Response('Unauthorized', { status: 401 })
 
   const movieListId = Number(params.id)
-  if (!Number.isFinite(movieListId)) return new Response('Bad list id', { status: 400 })
 
   await prisma.vote
     .delete({
@@ -45,5 +43,5 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   })
   const score = agg._sum.value ?? 0
 
-  return Response.json({ ok: true, hasVoted: false, score })
+  return NextResponse.json({ ok: true, hasVoted: false, score })
 }

@@ -71,6 +71,10 @@ export default function HomePage() {
     }
   }
 
+  const handleDeleteList = (id: number) => {
+    setLists((prev) => prev.filter((l) => l.id !== id))
+  }
+
   return (
     <section className="section">
       <div className="container has-text-centered mb-5">
@@ -80,7 +84,19 @@ export default function HomePage() {
         </button>
       </div>
 
-      {loading ? <p>Loading lists...</p> : <ListGrid lists={lists} />}
+      {loading ? (
+        <p>Loading lists...</p>
+      ) : (
+        <div className="fixed-grid has-1-cols-mobile	has-2-cols-tablet has-3-cols-widescreen">
+          <div className="grid is-row-gap-5 is-column-gap-4 is-multiline">
+            {lists.map((l) => (
+              <div key={l.id} className="cell">
+                <ListCard list={l} onDelete={handleDeleteList} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <NewListModal
         isOpen={isModalOpen}
