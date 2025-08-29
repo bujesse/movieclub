@@ -1,7 +1,5 @@
 # MVP
-* get user jwt token and use that for createdBy
 * list card buttons 
-    * upvote
     * undo upvote
     * delete
     * Edit button
@@ -9,6 +7,7 @@
 * make an api call on save to get even more data from tmdb 
     * runtime
     * director
+    * display total runtime
 * Add "description" to lists as justification for why the list exists
 * Fix overall header and footer from scrolling
     * might not even need either

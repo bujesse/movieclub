@@ -4,9 +4,17 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MovieListAll } from './page'
 import { tmdbImage } from '../lib/tmdb'
 import { GENRES } from '../types/tmdb'
+import { useRouter } from 'next/navigation'
+import { useCurrentUser } from './CurrentUserProvider'
 
 export default function ListCard({ list }: { list: MovieListAll }) {
-  const score = (list.votes ?? []).reduce((a, v) => a + v.value, 0)
+  const me = useCurrentUser()
+  const router = useRouter()
+
+  const initialScore = (list.votes ?? []).reduce((a, v) => a + v.value, 0)
+  const [score, setScore] = useState(initialScore)
+  const [hasVoted, setHasVoted] = useState(list.votes.some((v) => v.userId === me!.email))
+  const [pending, setPending] = useState(false)
 
   // Genres (deduped across movies)
   const genreIds = new Set<number>()
@@ -19,8 +27,25 @@ export default function ListCard({ list }: { list: MovieListAll }) {
   // Show a few titles, not the whole list
   const top = list.movies.slice(0, 6)
 
-  const handleUpvote = () => {
-    console.log('Upvote list', list.id)
+  const handleUpvote = async () => {
+    if (pending) return
+    setPending(true)
+    try {
+      const method = hasVoted ? 'DELETE' : 'POST'
+      const res = await fetch(`/api/lists/${list.id}/vote`, { method })
+      if (res.status === 401) {
+        // TODO: redirect to your Access-protected login page
+        // router.push("/login")
+        return
+      }
+      if (!res.ok) return
+      const data = await res.json()
+      setHasVoted(data.hasVoted)
+      if (typeof data.score === 'number') setScore(data.score)
+      router.refresh()
+    } finally {
+      setPending(false)
+    }
   }
 
   const handleDelete = () => {
@@ -149,8 +174,13 @@ export default function ListCard({ list }: { list: MovieListAll }) {
       </div>
 
       <footer className="card-footer">
-        <button className="card-footer-item button" onClick={handleUpvote}>
-          ▲ Upvote
+        <button
+          className={`card-footer-item button ${hasVoted ? 'is-success is-light' : ''}`}
+          onClick={handleUpvote}
+          disabled={pending}
+          title={hasVoted ? 'Click to remove your vote' : 'Upvote this list'}
+        >
+          {pending ? 'Working...' : hasVoted ? 'Upvoted ✓' : '▲ Upvote'}
         </button>
         <button
           className="card-footer-item button has-text-danger"
