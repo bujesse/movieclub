@@ -32,69 +32,49 @@ type IncomingMovie = {
   genres?: number[] | null
 }
 
-export async function POST(req: NextRequest) {
-  const { title, movies, createdBy } = (await req.json()) as {
-    title: string
-    createdBy: string
-    movies: IncomingMovie[]
-  }
-
-  if (!title || !createdBy || !Array.isArray(movies) || movies.length === 0) {
-    return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
-  }
-
-  // de-dupe by tmdbId (client safety)
+export function normalizeMovies(movies: IncomingMovie[]) {
   const seen = new Set<number>()
-  const uniqueMovies = movies.filter((m) => {
-    const id = Number(m.tmdbId)
-    if (!Number.isFinite(id) || seen.has(id)) return false
-    seen.add(id)
-    return true
-  })
+  return movies
+    .filter((m) => {
+      const id = Number(m.tmdbId)
+      if (!Number.isFinite(id) || seen.has(id)) return false
+      seen.add(id)
+      return true
+    })
+    .map((m) => {
+      const base = {
+        tmdbId: Number(m.tmdbId),
+        title: m.title,
+        originalTitle: m.originalTitle ?? null,
+        originalLanguage: m.originalLanguage ?? null,
+        releaseDate: m.releaseDate ? new Date(m.releaseDate) : null,
+        overview: m.overview ?? null,
+        voteAverage: m.voteAverage ?? null,
+        voteCount: m.voteCount ?? null,
+        posterPath: m.posterPath ?? null,
+        backdropPath: m.backdropPath ?? null,
+      }
+      return Array.isArray(m.genres) ? { ...base, genres: m.genres } : base
+    })
+}
 
-  const moviesToCreate = uniqueMovies.map((m: any) => {
-    const base = {
-      tmdbId: Number(m.tmdbId),
-      title: m.title,
-      originalTitle: m.originalTitle ?? null,
-      originalLanguage: m.originalLanguage ?? null,
-      releaseDate: m.releaseDate ? new Date(m.releaseDate) : null,
-      overview: m.overview ?? null,
-      voteAverage: m.voteAverage ?? null,
-      voteCount: m.voteCount ?? null,
-      posterPath: m.posterPath ?? null,
-      backdropPath: m.backdropPath ?? null,
-    }
-
-    // Only include genres if it's an array; otherwise omit the field
-    return Array.isArray(m.genres) ? { ...base, genres: m.genres } : base
-  })
-
+export async function POST(req: NextRequest) {
   try {
+    const { title, createdBy, movies } = await req.json()
     const list = await prisma.movieList.create({
       data: {
         title,
         createdBy,
-        movies: { create: moviesToCreate },
+        movies: { create: normalizeMovies(movies) },
       },
-      include: {
-        movies: true,
-        votes: true,
-      },
+      include: { movies: true, votes: true },
     })
-
     return NextResponse.json(list, { status: 201 })
-  } catch (err) {
-    // Optional: surface Prisma unique constraint errors nicely
-    // @ts-ignore
-    const code = err?.code
-    if (code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Duplicate movie in this list (tmdbId must be unique per list).' },
-        { status: 409 }
-      )
+  } catch (err: any) {
+    if (err?.code === 'P2002') {
+      return NextResponse.json({ error: 'Duplicate movie' }, { status: 409 })
     }
-    console.error('Create list failed:', err)
+    console.error('Create failed:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

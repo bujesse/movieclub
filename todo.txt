@@ -1,6 +1,4 @@
 # MVP
-* list card buttons 
-    * Edit button
 * add how many votes you have/used at the top
 * add a countdown to the next reset
 * print age on list cards, showing how old they are
@@ -12,12 +10,16 @@
 * Add "description" to lists as justification for why the list exists
 * Fix overall header and footer from scrolling
     * might not even need either
+* Validation
+    * can't have no movies, can't have no title
+    * disable button
 
 # Deploy
 * dockerize
 * set up github actions to build/deploy
 
 # Post MVP
+* add some sort of dev page to edit dates, delete lists, etc
 * Add a page that shows historical lists
     * Links to discord forums
 * Reset votes every 2 weeks

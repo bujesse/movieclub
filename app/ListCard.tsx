@@ -9,9 +9,11 @@ import { useCurrentUser } from './CurrentUserProvider'
 
 export default function ListCard({
   list,
+  onEdit,
   onDelete,
 }: {
   list: MovieListAll
+  onEdit: (id: number) => void
   onDelete: (id: number) => void
 }) {
   const me = useCurrentUser()
@@ -63,7 +65,6 @@ export default function ListCard({
       setTimeout(() => setAreYouSure(false), 3000)
       return
     }
-    if (pending) return
     setPending(true)
     try {
       const res = await fetch(`/api/lists/${list.id}`, { method: 'DELETE' })
@@ -211,13 +212,22 @@ export default function ListCard({
           {pending ? 'Working...' : hasVoted ? 'Upvoted ✓' : '▲ Upvote'}
         </button>
         {wasCreatedByMe && (
-          <button
-            className="card-footer-item button has-text-danger"
-            onClick={handleDelete}
-            disabled={false}
-          >
-            {areYouSure ? 'Are you sure?' : 'Delete'}
-          </button>
+          <>
+            <button
+              className="card-footer-item button has-text-link"
+              onClick={() => onEdit(list.id)}
+              disabled={pending}
+            >
+              Edit
+            </button>
+            <button
+              className="card-footer-item button has-text-danger"
+              onClick={handleDelete}
+              disabled={pending}
+            >
+              {areYouSure ? 'Are you sure?' : 'Delete'}
+            </button>
+          </>
         )}
       </footer>
     </div>
@@ -233,6 +243,9 @@ function PosterCarousel({
   width?: number
   intervalMs?: number
 }) {
+  const [idx, setIdx] = useState(0)
+  const timerRef = useRef<number | null>(null)
+
   const posters = useMemo(() => {
     const seen = new Set<string>()
     const list = movies
@@ -243,11 +256,9 @@ function PosterCarousel({
       .filter((x): x is { url: string; alt: string } => !!x)
       .filter(({ url }) => (seen.has(url) ? false : (seen.add(url), true)))
 
-    return list.length > 0 ? list : [{ url: '', alt: 'Poster' }] // keep length > 0
+    setIdx(0)
+    return list
   }, [movies])
-
-  const [idx, setIdx] = useState(0)
-  const timerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (timerRef.current) {
@@ -264,14 +275,6 @@ function PosterCarousel({
       if (timerRef.current) window.clearInterval(timerRef.current)
     }
   }, [posters.length, intervalMs])
-
-  useEffect(() => {
-    posters.forEach(({ url }) => {
-      if (!url) return
-      const img = new Image()
-      img.src = url
-    })
-  }, [posters])
 
   // Own aspect ratio: 2:3 via padding-bottom trick.
   return (
