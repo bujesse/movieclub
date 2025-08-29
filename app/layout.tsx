@@ -3,6 +3,7 @@ import './globals.css'
 import Header from './Header'
 import { getIdentity } from '../lib/cfAccess'
 import CurrentUserProvider from './CurrentUserProvider'
+import { prisma } from '../lib/prisma'
 
 export const metadata = {
   title: 'Movie Club',
@@ -13,8 +14,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const id = await getIdentity()
   const me = id ? { email: id.email ?? null, name: id.name ?? null } : null
 
+  let voteCount = 0
+  if (me?.email) {
+    voteCount = await prisma.vote.count({
+      where: { userId: me.email },
+    })
+  }
+
   return (
-    <html lang="en">
+    <html lang="en" className="has-navbar-fixed-top">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -24,19 +32,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {/* Sticky Header */}
         <CurrentUserProvider user={me}>
-          <Header />
+          <Header voteCount={voteCount} />
 
           {/* Main Content */}
           <main className="container" style={{ minHeight: '75vh' }}>
             {children}
           </main>
-
-          {/* Footer */}
-          <footer className="footer has-background-dark has-text-white">
-            <div className="container has-text-centered">
-              <p>&copy; {new Date().getFullYear()} Movie Club. All rights reserved.</p>
-            </div>
-          </footer>
         </CurrentUserProvider>
       </body>
     </html>

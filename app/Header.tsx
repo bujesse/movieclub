@@ -2,24 +2,36 @@
 
 import { useCurrentUser } from './CurrentUserProvider'
 
-export default function Header() {
+const MAX_VOTES = 3
+
+export default function Header({ voteCount }: { voteCount: number }) {
   const me = useCurrentUser()
   const display = me?.name ?? (me?.email ? me.email.split('@')[0] : null)
 
   return (
-    <header className="section has-background-dark">
-      <nav className="container is-flex is-justify-content-space-between is-align-items-center">
-        <h1 className="title has-text-white is-4" style={{ margin: 0 }}>
-          Movie Club
-        </h1>
-        <ul className="is-flex">
-          <li className="mr-3">
-            <a className="has-text-white" href="/">
-              {display ? <span>{display}</span> : <span>Guest</span>}
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </header>
+    <nav
+      className="navbar is-fixed-top is-spaced is-dark"
+      role="navigation"
+      aria-label="main navigation"
+    >
+      <div className="navbar-brand custom-navbar">
+        <a className="navbar-item" href="/">
+          <strong>🍿 Movie Club</strong>
+        </a>
+        <div className="navbar-item is-right">
+          <p>{display}</p>
+          <span className="tag is-info is-light">
+            Votes: {voteCount}/{MAX_VOTES}
+          </span>
+        </div>
+      </div>
+      <style jsx>{`
+        .custom-navbar {
+          display: flex;
+          flex: 1 1;
+          justify-content: space-between;
+        }
+      `}</style>
+    </nav>
   )
 }
