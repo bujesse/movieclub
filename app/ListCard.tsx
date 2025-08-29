@@ -119,7 +119,9 @@ export default function ListCard({
             {/* Movie List */}
             <div className="content movie-list">
               {top.map((m, i) => (
-                <div
+                <a
+                  href={`https://letterboxd.com/tmdb/${m.tmdbId}`}
+                  target="_blank"
                   key={(m.id ?? i) as React.Key}
                   className="movie-item"
                   role="button"
@@ -134,7 +136,7 @@ export default function ListCard({
                     )}
                   </div>
                   <span className="movie-chevron">›</span>
-                </div>
+                </a>
               ))}
             </div>
             <style jsx>{`

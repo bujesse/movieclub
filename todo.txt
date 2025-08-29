@@ -1,5 +1,5 @@
 # MVP
-* add link to letterboxd - https://letterboxd.com/tmdb/<tmdb_id>
+* actually restrict votes
 * print age on list cards, showing how old they are
 * Load lists in order of most upvotes, then by oldest (users have to scroll past oldest to get to newest)
 * make an api call on save to get even more data from tmdb 
