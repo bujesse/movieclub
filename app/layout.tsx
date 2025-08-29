@@ -21,6 +21,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     })
   }
 
+  const nextMeetup = await prisma.meetup.findFirst({
+    where: { date: { gt: new Date() } },
+    orderBy: { date: 'asc' },
+    select: { date: true },
+  })
+  const nextMeetupIso = nextMeetup?.date ? nextMeetup.date.toISOString() : null
+
   return (
     <html lang="en" className="has-navbar-fixed-top">
       <head>
@@ -32,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {/* Sticky Header */}
         <CurrentUserProvider user={me}>
-          <Header voteCount={voteCount} />
+          <Header voteCount={voteCount} nextMeetupIso={nextMeetupIso} />
 
           {/* Main Content */}
           <main className="container" style={{ minHeight: '75vh' }}>
