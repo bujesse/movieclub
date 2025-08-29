@@ -1,5 +1,6 @@
 import 'bulma/css/bulma.min.css'
 import './globals.css'
+import Header from './Header'
 
 export const metadata = {
   title: 'Movie Club',
@@ -17,25 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {/* Sticky Header */}
-        <header className="section has-background-dark">
-          <nav className="container is-flex is-justify-content-space-between is-align-items-center">
-            <h1 className="title has-text-white is-4" style={{ margin: 0 }}>
-              Movie Club
-            </h1>
-            <ul className="is-flex">
-              <li className="mr-3">
-                <a className="has-text-white" href="/">
-                  Home
-                </a>
-              </li>
-              <li>
-                <a className="has-text-white" href="/about">
-                  About
-                </a>
-              </li>
-            </ul>
-          </nav>
-        </header>
+        <Header />
 
         {/* Main Content */}
         <main className="container" style={{ minHeight: '75vh' }}>

@@ -5,15 +5,7 @@ import { MovieListAll } from './page'
 import { tmdbImage } from '../lib/tmdb'
 import { GENRES } from '../types/tmdb'
 
-export default function ListCard({
-  list,
-  onUpvote,
-  onDelete,
-}: {
-  list: MovieListAll
-  onUpvote: (id: number) => void
-  onDelete?: (id: number) => void
-}) {
+export default function ListCard({ list }: { list: MovieListAll }) {
   const score = (list.votes ?? []).reduce((a, v) => a + v.value, 0)
 
   // Genres (deduped across movies)
@@ -26,6 +18,14 @@ export default function ListCard({
 
   // Show a few titles, not the whole list
   const top = list.movies.slice(0, 6)
+
+  const handleUpvote = () => {
+    console.log('Upvote list', list.id)
+  }
+
+  const handleDelete = () => {
+    console.log('Delete list', list.id)
+  }
 
   return (
     <div
@@ -138,7 +138,7 @@ export default function ListCard({
             {genres.length > 0 && (
               <div className="tags mb-3 is-justify-content-center is-align-items-center is-flex-mobile">
                 {genres.map((g) => (
-                  <span key={g} className="tag is-warning is-light">
+                  <span key={g} className="tag is-dark">
                     {g}
                   </span>
                 ))}
@@ -149,13 +149,13 @@ export default function ListCard({
       </div>
 
       <footer className="card-footer">
-        <button className="card-footer-item button is-white" onClick={() => onUpvote(list.id)}>
+        <button className="card-footer-item button" onClick={handleUpvote}>
           ▲ Upvote
         </button>
         <button
-          className="card-footer-item button is-white has-text-danger"
-          onClick={() => onDelete?.(list.id)}
-          disabled={!onDelete}
+          className="card-footer-item button has-text-danger"
+          onClick={handleDelete}
+          disabled={false}
         >
           Delete
         </button>

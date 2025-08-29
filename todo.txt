@@ -1,12 +1,10 @@
 # MVP
-* stylize the list cards
-    * genre, poster, faded backdrop image?
-    * move the media card that's used in the typeahead to a shared component
 * get user jwt token and use that for createdBy
 * list card buttons 
     * upvote
     * undo upvote
     * delete
+    * Edit button
 * Load lists in order of most upvotes
 * make an api call on save to get even more data from tmdb 
     * runtime
@@ -24,3 +22,5 @@
     * Links to discord forums
     
 
+# Tech Debt
+* move the media card that's used in the typeahead to a shared component

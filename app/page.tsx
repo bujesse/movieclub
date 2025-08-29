@@ -15,13 +15,13 @@ export type MovieListAll = Prisma.MovieListGetPayload<{
 // ----------------------
 // List Grid Component
 // ----------------------
-function ListGrid({ lists, onUpvote }: { lists: MovieListAll[]; onUpvote: (id: number) => void }) {
+function ListGrid({ lists }: { lists: MovieListAll[] }) {
   return (
     <div className="fixed-grid has-1-cols-mobile	has-2-cols-tablet has-3-cols-widescreen">
       <div className="grid is-row-gap-5 is-column-gap-4 is-multiline">
         {lists.map((l) => (
           <div key={l.id} className="cell">
-            <ListCard list={l} onUpvote={onUpvote} />
+            <ListCard list={l} />
           </div>
         ))}
       </div>
@@ -71,10 +71,6 @@ export default function HomePage() {
     }
   }
 
-  const handleUpvote = (id: number) => {
-    console.log('Upvote list with ID:', id)
-  }
-
   return (
     <section className="section">
       <div className="container has-text-centered mb-5">
@@ -84,7 +80,7 @@ export default function HomePage() {
         </button>
       </div>
 
-      {loading ? <p>Loading lists...</p> : <ListGrid lists={lists} onUpvote={handleUpvote} />}
+      {loading ? <p>Loading lists...</p> : <ListGrid lists={lists} />}
 
       <NewListModal
         isOpen={isModalOpen}
