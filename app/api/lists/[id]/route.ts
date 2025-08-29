@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { revalidatePath } from 'next/cache'
 import { normalizeMovies } from '../route'
-
-const prisma = new PrismaClient()
+import { prisma } from '../../../../lib/prisma'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // Auth

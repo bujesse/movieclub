@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import { getIdentityFromRequest } from '../../../../../lib/cfAccess'
-
-const prisma = new PrismaClient()
+import { prisma } from '../../../../../lib/prisma'
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const id = await getIdentityFromRequest(req)
