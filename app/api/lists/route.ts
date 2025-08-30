@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../lib/prisma'
 
-// GET all movie lists with movies and vote totals
+// GET movie lists not associated with a meetup,
+// Sorted by number of votes (desc) then createdAt (asc)
 export async function GET() {
   const lists = await prisma.movieList.findMany({
+    where: {
+      Meetup: null,
+    },
     include: {
       movies: true,
       votes: true,
+      _count: { select: { votes: true } },
     },
     orderBy: {
-      createdAt: 'desc',
+      createdAt: 'asc',
     },
+  })
+
+  // Sort by votes desc, then createdAt asc
+  lists.sort((a, b) => {
+    const diff = b._count.votes - a._count.votes
+    if (diff !== 0) return diff
+    return a.createdAt.getTime() - b.createdAt.getTime()
   })
 
   return NextResponse.json(lists)

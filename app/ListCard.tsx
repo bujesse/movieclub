@@ -132,6 +132,7 @@ export default function ListCard({
                   className="movie-item"
                   role="button"
                   tabIndex={0}
+                  title="View on Letterboxd"
                 >
                   <div className="movie-text">
                     <div className="movie-title">

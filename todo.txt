@@ -1,5 +1,4 @@
 # MVP
-* Load lists in order of most upvotes, then by oldest (users have to scroll past oldest to get to newest)
 * archive movie clubs that have happened and create a page for them to see who voted for what
   * hide lists that have already happened from the main page (denormalize?)
 
