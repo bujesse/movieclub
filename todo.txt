@@ -1,14 +1,7 @@
 # MVP
-* actually restrict votes
 * print age on list cards, showing how old they are
 * Load lists in order of most upvotes, then by oldest (users have to scroll past oldest to get to newest)
-* make an api call on save to get even more data from tmdb 
-    * runtime
-    * director
-    * display total runtime
 * Add "description" to lists as justification for why the list exists
-* Fix overall header and footer from scrolling
-    * might not even need either
 * Validation
     * can't have no movies, can't have no title
     * disable button
@@ -18,6 +11,11 @@
 * set up github actions to build/deploy
 
 # Post MVP
+* archive movie clubs that have happened and create a page for them to see who voted for what
+* make an api call on save to get even more data from tmdb 
+    * runtime
+    * director
+    * display total runtime
 * add some sort of dev page to edit dates, delete lists, etc
 * Add a page that shows historical lists
     * Links to discord forums

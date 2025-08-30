@@ -4,6 +4,7 @@ import Header from './Header'
 import { getIdentity } from '../lib/cfAccess'
 import CurrentUserProvider from './CurrentUserProvider'
 import { prisma } from '../lib/prisma'
+import { VotesProvider } from './VotesProvider'
 
 export const metadata = {
   title: 'Movie Club',
@@ -14,19 +15,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const id = await getIdentity()
   const me = id ? { email: id.email ?? null, name: id.name ?? null } : null
 
-  let voteCount = 0
-  if (me?.email) {
-    voteCount = await prisma.vote.count({
-      where: { userId: me.email },
-    })
-  }
-
+  // Meetup is always the next upcoming one
   const nextMeetup = await prisma.meetup.findFirst({
     where: { date: { gt: new Date() } },
     orderBy: { date: 'asc' },
-    select: { date: true },
+    select: { id: true, date: true },
   })
-  const nextMeetupIso = nextMeetup?.date ? nextMeetup.date.toISOString() : null
+  const nextMeetupIso = nextMeetup?.date?.toISOString() ?? null
+
+  // Votes are scoped to user + meetup
+  let voteCount = 0
+  if (me?.email && nextMeetup?.id) {
+    voteCount = await prisma.vote.count({ where: { userId: me.email, meetupId: nextMeetup.id } })
+  }
 
   return (
     <html lang="en" className="has-navbar-fixed-top">
@@ -39,12 +40,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {/* Sticky Header */}
         <CurrentUserProvider user={me}>
-          <Header voteCount={voteCount} nextMeetupIso={nextMeetupIso} />
+          <VotesProvider initialUsed={voteCount}>
+            <Header nextMeetupIso={nextMeetupIso} />
 
-          {/* Main Content */}
-          <main className="container" style={{ minHeight: '75vh' }}>
-            {children}
-          </main>
+            {/* Main Content */}
+            <main className="container" style={{ minHeight: '75vh' }}>
+              {children}
+            </main>
+          </VotesProvider>
         </CurrentUserProvider>
       </body>
     </html>

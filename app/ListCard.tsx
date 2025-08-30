@@ -6,6 +6,7 @@ import { tmdbImage } from '../lib/tmdb'
 import { GENRES } from '../types/tmdb'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
+import { useVotes } from './VotesProvider'
 
 export default function ListCard({
   list,
@@ -18,6 +19,7 @@ export default function ListCard({
 }) {
   const me = useCurrentUser()
   const myEmail = me!.email
+  const { canVote } = useVotes()
   const router = useRouter()
 
   const initialScore = (list.votes ?? []).reduce((a, v) => a + v.value, 0)
@@ -208,8 +210,8 @@ export default function ListCard({
         <button
           className={`card-footer-item button ${hasVoted ? 'is-success is-light' : ''}`}
           onClick={handleUpvote}
-          disabled={pending}
-          title={hasVoted ? 'Click to remove your vote' : 'Upvote this list'}
+          disabled={pending || (!hasVoted && !canVote)}
+          title={!hasVoted && !canVote ? 'No votes left' : undefined}
         >
           {pending ? 'Working...' : hasVoted ? 'Upvoted ✓' : '▲ Upvote'}
         </button>

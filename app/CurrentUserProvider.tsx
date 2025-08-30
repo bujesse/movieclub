@@ -1,5 +1,5 @@
-// app/CurrentUserProvider.tsx  (Client)
 'use client'
+
 import { createContext, useContext } from 'react'
 
 type Me = { email: string; name: string | null } | null

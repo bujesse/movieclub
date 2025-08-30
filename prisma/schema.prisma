@@ -70,9 +70,13 @@ model Vote {
   value       Int // 1 or -1
   createdAt   DateTime  @default(now())
 
+  // tie each vote to a specific meetup
+  meetup   Meetup @relation(fields: [meetupId], references: [id], onDelete: Cascade)
+  meetupId Int
+
   // Prevent multiple votes by same user on a list
-  @@unique([movieListId, userId])
-  @@index([userId])
+  @@unique([movieListId, userId, meetupId])
+  @@index([userId, meetupId])
 }
 
 model Meetup {
@@ -81,4 +85,5 @@ model Meetup {
 
   movieList   MovieList? @relation(fields: [movieListId], references: [id])
   movieListId Int?       @unique
+  Vote        Vote[]
 }

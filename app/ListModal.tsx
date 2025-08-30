@@ -90,6 +90,12 @@ export default function ListModal({
     }
 
     onSubmit(payload)
+    handleModalClose()
+  }
+
+  const handleModalClose = () => {
+    setListTitle('')
+    setMovieArray([])
     onClose()
   }
 
@@ -97,11 +103,11 @@ export default function ListModal({
 
   return (
     <div className={`modal ${isOpen ? 'is-active' : ''}`}>
-      <div className="modal-background" onClick={onClose}></div>
+      <div className="modal-background" onClick={handleModalClose}></div>
       <div className="modal-card">
         <header className="modal-card-head">
           <p className="modal-card-title">{mode === 'edit' ? 'Edit List' : 'Create New List'}</p>
-          <button className="delete" aria-label="close" onClick={onClose}></button>
+          <button className="delete" aria-label="close" onClick={handleModalClose}></button>
         </header>
         <section className="modal-card-body">
           <form onSubmit={handleSubmit}>
@@ -193,7 +199,7 @@ export default function ListModal({
 
             <div className="field is-grouped is-grouped-right mt-4">
               <div className="control">
-                <button type="button" className="button" onClick={onClose}>
+                <button type="button" className="button" onClick={handleModalClose}>
                   Cancel
                 </button>
               </div>

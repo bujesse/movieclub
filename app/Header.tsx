@@ -2,16 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCurrentUser } from './CurrentUserProvider'
+import { useVotes } from './VotesProvider'
 
-const MAX_VOTES = 3
-
-export default function Header({
-  voteCount,
-  nextMeetupIso,
-}: {
-  voteCount: number
-  nextMeetupIso?: string | null
-}) {
+export default function Header({ nextMeetupIso }: { nextMeetupIso?: string | null }) {
+  const { usedVotes, maxVotes } = useVotes()
   const me = useCurrentUser()
   const display = me?.name ?? (me?.email ? me.email.split('@')[0] : null)
 
@@ -40,21 +34,28 @@ export default function Header({
         }}
       >
         <a className="navbar-item" href="/">
-          <strong>🎬 MC</strong>
+          <strong>🎬 Movie Club</strong>
         </a>
 
         {targetDate && (
-          <div className="navbar-item">
+          <div
+            className="navbar-item"
+            style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}
+          >
             <TooltipDay targetDate={targetDate}>
               <Countdown targetDate={targetDate} />
             </TooltipDay>
           </div>
         )}
 
-        <div className="navbar-item is-right" style={{ gap: '0.5rem' }}>
-          <p>{display}</p>
-          <span className="tag is-info is-light">
-            Votes: {voteCount}/{MAX_VOTES}
+        <div className="navbar-item" style={{ gap: '0.5rem' }}>
+          <p className="is-hidden-mobile">{display}</p>
+          <span
+            className={`tag is-medium ${
+              usedVotes < maxVotes ? 'is-success' : 'is-danger is-light'
+            }`}
+          >
+            Votes: {usedVotes}/{maxVotes}
           </span>
         </div>
       </div>
@@ -66,7 +67,10 @@ function Countdown({ targetDate }: { targetDate: Date }) {
   const { days, hours, minutes, seconds } = useCountdown(targetDate)
   return (
     <span className="tag is-warning is-medium" suppressHydrationWarning>
-      {days}d {hours}h {minutes}m {seconds}s
+      <span className="is-hidden-touch">Next meetup:&nbsp;</span>
+      <span className="has-text-weight-semibold">
+        {days}d {hours}h {minutes}m {seconds}s
+      </span>
     </span>
   )
 }
