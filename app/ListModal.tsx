@@ -24,13 +24,19 @@ export default function ListModal({
   const me = useCurrentUser()
   const myEmail = me!.email
   const [listTitle, setListTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [movieInput, setMovieInput] = useState('')
   const [movieArray, setMovieArray] = useState<TmdbMovie[]>([])
+
+  const [showErrors, setShowErrors] = useState(false)
+  const hasMovies = movieArray.length > 0
+  const isValid = listTitle.trim() !== '' && hasMovies
 
   // Pre-fill when editing (minimal change: keep structure/styling identical)
   useEffect(() => {
     if (mode === 'edit' && initialList) {
       setListTitle(initialList.title)
+      setDescription(initialList.description ?? '')
       setMovieArray(
         // @ts-ignore
         initialList.movies.map((m: any) => ({
@@ -52,12 +58,8 @@ export default function ListModal({
           genre_ids: Array.isArray(m.genres) ? m.genres : [],
         }))
       )
-    } else {
-      setListTitle('')
-      setMovieArray([])
     }
-    setMovieInput('')
-  }, [mode, initialList])
+  }, [isOpen])
 
   const labelFor = (m: TmdbMovie) => `${m.title} (${m.release_date?.slice(0, 4) || 'N/A'})`
 
@@ -69,10 +71,14 @@ export default function ListModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!listTitle || movieArray.length === 0) return
+    if (!isValid) {
+      setShowErrors(true)
+      return
+    }
 
     const payload = {
       title: listTitle,
+      description,
       createdBy: myEmail,
       movies: movieArray.map((m: any) => ({
         tmdbId: Number(m.id),
@@ -96,6 +102,8 @@ export default function ListModal({
   const handleModalClose = () => {
     setListTitle('')
     setMovieArray([])
+    setDescription('')
+    setMovieInput('')
     onClose()
   }
 
@@ -123,6 +131,22 @@ export default function ListModal({
                   value={listTitle}
                   onChange={(e) => setListTitle(e.target.value)}
                   required
+                />
+              </div>
+            </div>
+
+            <div className="field">
+              <label className="label" htmlFor="description">
+                Description
+              </label>
+              <div className="control">
+                <textarea
+                  id="description"
+                  className="textarea"
+                  placeholder="Optional description of your list"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={2}
                 />
               </div>
             </div>
@@ -196,6 +220,8 @@ export default function ListModal({
                 )}
               </div>
             )}
+
+            {showErrors && !hasMovies && <p className="help is-danger">Add at least one movie.</p>}
 
             <div className="field is-grouped is-grouped-right mt-4">
               <div className="control">
