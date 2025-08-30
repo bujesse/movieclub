@@ -7,6 +7,7 @@ import { GENRES } from '../types/tmdb'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
+import { formatDistanceToNowStrict } from 'date-fns'
 
 export default function ListCard({
   list,
@@ -98,8 +99,14 @@ export default function ListCard({
           {list.title}
           <span className="tag is-info is-light ml-2">Votes: {score}</span>
         </p>
-        <div className="card-header-icon is-size-7 has-text-grey pr-3">
+        <div
+          className="card-header-icon is-size-7 has-text-grey pr-3"
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}
+        >
           <span className="has-text-weight-medium">{list.createdBy}</span>
+          <p className="is-size-7 has-text-grey mb-0">
+            {formatDistanceToNowStrict(new Date(list.createdAt), { addSuffix: true })}
+          </p>
         </div>
       </header>
 
