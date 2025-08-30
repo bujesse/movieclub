@@ -7,9 +7,11 @@
 * set up github actions to build/deploy
 
 # Post MVP
+* possibly see if there's a better way to print names
 * add tests
-* add optional
+* add optional flag
 * add graveyard for lists that didn't get picked (auto expire after 2 months with 0 votes?)
+  * add isArchived flag - remember to filter out archived lists from main page
 * add a gallery for all movies seen in the club
 * make an api call on save to get even more data from tmdb 
     * runtime
@@ -25,16 +27,3 @@
 
 # Tech Debt
 * move the media card that's used in the typeahead to a shared component
-
-      <nav class="navbar" role="navigation" aria-label="main navigation">
-        <h1 className="title has-text-white is-4" style={{ margin: 0 }}>
-          Movie Club
-        </h1>
-        <ul className="is-flex">
-          <li className="mr-3">
-            <a className="has-text-white" href="/">
-              {display ? <span>{display}</span> : <span>Guest</span>}
-            </a>
-          </li>
-        </ul>
-      </nav>

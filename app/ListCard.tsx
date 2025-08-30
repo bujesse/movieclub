@@ -98,9 +98,14 @@ export default function ListCard({
         <p className="card-header-title">{list.title}</p>
         <div
           className="card-header-icon is-size-7 has-text-grey pr-3"
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            minWidth: '115px',
+          }}
         >
-          <span className="has-text-weight-medium">{list.createdBy}</span>
+          <span className="has-text-weight-medium">{list.createdBy.split('@')[0]}</span>
           <p className="is-size-7 has-text-grey mb-0">
             {formatDistanceToNowStrict(new Date(list.createdAt), { addSuffix: true })}
           </p>
