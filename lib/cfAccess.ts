@@ -1,5 +1,3 @@
-// Reads & verifies the Cloudflare Access JWT and returns all available info.
-// Env required: CF_ACCESS_DOMAIN (e.g. your-team.cloudflareaccess.com), CF_ACCESS_AUD (AUD tag)
 import 'server-only'
 import { headers, cookies } from 'next/headers'
 import type { NextRequest } from 'next/server'
@@ -39,7 +37,8 @@ async function verify(token: string): Promise<CfIdentity> {
   const sub = p.sub as string | undefined
   if (!sub) throw new Error('Invalid token: missing sub')
 
-  const email = p.email
+  const email = p.email as string
+
   const name =
     (p.name as string | undefined) ??
     (p.nickname as string | undefined) ??

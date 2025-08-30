@@ -1,0 +1,43 @@
+name: Deploy movieclub to Homelab
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write env file
+        run: |
+          echo "CF_ACCESS_DOMAIN=${{ secrets.CF_ACCESS_DOMAIN }}" >> .env
+          echo "CF_ACCESS_AUD=${{ secrets.CF_ACCESS_AUD }}" >> .env
+          echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" >> .env
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: docker compose -f docker-compose.prod.yml build
+
+  deploy:
+    runs-on: self-hosted
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Write env file
+        run: |
+          echo "CF_ACCESS_DOMAIN=${{ secrets.CF_ACCESS_DOMAIN }}" >> .env
+          echo "CF_ACCESS_AUD=${{ secrets.CF_ACCESS_AUD }}" >> .env
+          echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" >> .env
+
+      - name: Stop old stack
+        run: docker compose -f docker-compose.prod.yml down
+
+      - name: Start stack
+        run: docker compose -f docker-compose.prod.yml up -d

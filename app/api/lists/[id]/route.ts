@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { revalidatePath } from 'next/cache'
-import { normalizeMovies } from '../route'
 import { prisma } from '../../../../lib/prisma'
+import { normalizeMovies } from '../../../../lib/helpers'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // Auth

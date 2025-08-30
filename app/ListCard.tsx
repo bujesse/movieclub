@@ -32,7 +32,7 @@ export default function ListCard({
 
   // Genres (deduped across movies)
   const genreIds = new Set<number>()
-  list.movies.forEach((m) => (m.genres ?? []).forEach((g) => genreIds.add(g)))
+  list.movies.forEach((m) => ((m.genres as number[]) ?? []).forEach((g) => genreIds.add(g)))
   const genres = Array.from(genreIds)
     .map((id) => GENRES[id])
     .filter(Boolean)

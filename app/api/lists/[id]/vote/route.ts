@@ -13,7 +13,7 @@ async function getNextMeetupId(tx: PrismaClient | Prisma.TransactionClient = pri
   return next?.id ?? null
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: any }) {
   const id = await getIdentityFromRequest(req)
   if (!id) return new Response('Unauthorized', { status: 401 })
 
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: any) {
   const id = await getIdentityFromRequest(req)
   if (!id) return new Response('Unauthorized', { status: 401 })
 

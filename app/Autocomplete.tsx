@@ -93,7 +93,11 @@ export default function Autocomplete<T>({
         setLoading(false)
       }
     }, DEBOUNCE_MS)
-    return () => debounceRef.current && clearTimeout(debounceRef.current)
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current) // always returns void
+      }
+    }
   }, [value])
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
