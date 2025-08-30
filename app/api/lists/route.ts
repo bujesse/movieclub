@@ -58,10 +58,11 @@ export function normalizeMovies(movies: IncomingMovie[]) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, createdBy, movies } = await req.json()
+    const { title, description, createdBy, movies } = await req.json()
     const list = await prisma.movieList.create({
       data: {
         title,
+        description,
         createdBy,
         movies: { create: normalizeMovies(movies) },
       },

@@ -204,6 +204,15 @@ export default function ListCard({
             )}
           </div>
         </div>
+        {list.description && (
+          <p
+            id="list-description"
+            className="list-description mt-3 has-text-grey-light is-size-7 has-text-centered"
+            title={list.description}
+          >
+            {list.description}
+          </p>
+        )}
       </div>
 
       <footer className="card-footer">

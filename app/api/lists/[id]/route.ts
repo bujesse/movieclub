@@ -19,9 +19,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (list.createdBy !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   try {
-    const { title, movies } = await req.json()
+    const { title, description, movies } = await req.json()
     const data: any = {}
     if (title) data.title = title
+    data.description = description
     if (movies) {
       data.movies = { deleteMany: {}, create: normalizeMovies(movies) }
     }
