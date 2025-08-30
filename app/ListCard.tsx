@@ -95,10 +95,7 @@ export default function ListCard({
       }}
     >
       <header className="card-header">
-        <p className="card-header-title">
-          {list.title}
-          <span className="tag is-info is-light ml-2">Votes: {score}</span>
-        </p>
+        <p className="card-header-title">{list.title}</p>
         <div
           className="card-header-icon is-size-7 has-text-grey pr-3"
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}
@@ -224,12 +221,17 @@ export default function ListCard({
 
       <footer className="card-footer">
         <button
-          className={`card-footer-item button ${hasVoted ? 'is-success is-light' : ''}`}
+          className={`card-footer-item button ${hasVoted ? 'is-success is-light' : 'is-light'}`}
           onClick={handleUpvote}
           disabled={pending || (!hasVoted && !canVote)}
-          title={!hasVoted && !canVote ? 'No votes left' : undefined}
+          aria-pressed={hasVoted}
+          title={hasVoted ? 'You voted for this' : !canVote ? 'No votes left' : 'Upvote'}
         >
-          {pending ? 'Working...' : hasVoted ? 'Upvoted ✓' : '▲ Upvote'}
+          <span className="icon is-small" aria-hidden>
+            <span>{hasVoted ? '▲' : '△'}</span>
+          </span>
+          <span className="ml-2 has-text-weight-semibold">{score}</span>
+          {hasVoted && <span className="ml-2 is-size-7 has-text-success">Voted</span>}
         </button>
         {wasCreatedByMe && (
           <>
