@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MovieListAll } from './page'
+import { MovieListAllWithFlags } from './page'
 import { tmdbImage } from '../lib/tmdb'
 import { GENRES } from '../types/tmdb'
 import { useRouter } from 'next/navigation'
@@ -14,7 +14,7 @@ export default function ListCard({
   onEdit,
   onDelete,
 }: {
-  list: MovieListAll
+  list: MovieListAllWithFlags
   onEdit: (id: number) => void
   onDelete: (id: number) => void
 }) {
@@ -142,6 +142,14 @@ export default function ListCard({
                   <div className="movie-text">
                     <div className="movie-title">
                       <strong>{m.title}</strong>
+                      {m.inMultipleLists && (
+                        <span
+                          title="This movie appears in multiple lists"
+                          aria-label="In multiple lists"
+                        >
+                          🔥
+                        </span>
+                      )}
                     </div>
                     {m.releaseDate && (
                       <div className="movie-meta">{new Date(m.releaseDate).getFullYear()}</div>

@@ -142,6 +142,21 @@ export default function Autocomplete<T>({
           aria-controls={listId}
           aria-autocomplete="list"
         />
+        {value && (
+          <button
+            type="button"
+            className="delete is-small is-right"
+            style={{
+              position: 'absolute',
+              right: '0.75rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              pointerEvents: 'auto',
+            }}
+            onMouseDown={(e) => e.preventDefault()} // keep focus
+            onClick={() => onChange('')}
+          />
+        )}
       </div>
 
       {/* Portal: render dropdown at document.body with fixed coords */}

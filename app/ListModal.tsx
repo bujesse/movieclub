@@ -127,6 +127,7 @@ export default function ListModal({
                 <input
                   id="listTitle"
                   className="input"
+                  placeholder="List title"
                   type="text"
                   value={listTitle}
                   onChange={(e) => setListTitle(e.target.value)}

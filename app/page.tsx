@@ -13,11 +13,43 @@ export type MovieListAll = Prisma.MovieListGetPayload<{
   }
 }>
 
+export type MovieListAllWithFlags = Omit<MovieListAll, 'movies'> & {
+  movies: (MovieListAll['movies'][number] & {
+    inMultipleLists: boolean
+    listCount: number
+  })[]
+}
+
+function withDuplicateFlags(lists: MovieListAll[]): MovieListAllWithFlags[] {
+  // Count how many lists each movie appears in (by tmdbId if present, else by id)
+  const counts = new Map<number, number>()
+  for (const list of lists) {
+    for (const m of list.movies) {
+      const key = (m as any).tmdbId ?? m.id
+      counts.set(key, (counts.get(key) ?? 0) + 1)
+    }
+  }
+
+  // Attach flags to each movie
+  return lists.map((list) => ({
+    ...list,
+    movies: list.movies.map((m) => {
+      const key = (m as any).tmdbId ?? m.id
+      const c = counts.get(key) ?? 1
+      return {
+        ...m,
+        inMultipleLists: c > 1,
+        listCount: c,
+      }
+    }),
+  }))
+}
+
 // ----------------------
 // Home Page
 // ----------------------
 export default function HomePage() {
-  const [lists, setLists] = useState<MovieListAll[]>([])
+  const [lists, setLists] = useState<MovieListAllWithFlags[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [initialList, setInitialList] = useState<MovieListAll | undefined>(undefined)
@@ -32,7 +64,7 @@ export default function HomePage() {
         const res = await fetch('/api/lists')
         if (!res.ok) throw new Error('Failed to fetch lists')
         const data = await res.json()
-        setLists(data)
+        setLists(withDuplicateFlags(data))
       } catch (err) {
         console.error(err)
       } finally {
@@ -68,9 +100,13 @@ export default function HomePage() {
 
       const data = await res.json()
 
-      setLists((prev) =>
-        isEdit ? prev.map((l) => (l.id === data.id ? data : l)) : [data, ...prev]
-      )
+      setLists((prev) => {
+        const next =
+          modalMode === 'edit' && initialList
+            ? prev.map((l) => (l.id === data.id ? data : l))
+            : [data, ...prev]
+        return withDuplicateFlags(next as MovieListAll[])
+      })
 
       setIsModalOpen(false)
       setInitialList(undefined)
@@ -82,7 +118,7 @@ export default function HomePage() {
   }
 
   const handleDeleteList = (id: number) => {
-    setLists((prev) => prev.filter((l) => l.id !== id))
+    setLists((prev) => withDuplicateFlags(prev.filter((l) => l.id !== id) as MovieListAll[]))
   }
 
   const handleEditList = (id: number) => {

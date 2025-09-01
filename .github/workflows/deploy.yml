@@ -13,6 +13,8 @@ jobs:
 
       - name: Write env file
         run: |
+          echo "PUBLIC_HOST=${{ secrets.PUBLIC_HOST }}" >> .env
+          echo "MOVIECLUB_DATA_DIR=${{ secrets.MOVIECLUB_DATA_DIR }}" >> .env
           echo "CF_ACCESS_DOMAIN=${{ secrets.CF_ACCESS_DOMAIN }}" >> .env
           echo "CF_ACCESS_AUD=${{ secrets.CF_ACCESS_AUD }}" >> .env
           echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" >> .env
@@ -32,6 +34,8 @@ jobs:
 
       - name: Write env file
         run: |
+          echo "PUBLIC_HOST=${{ secrets.PUBLIC_HOST }}" >> .env
+          echo "MOVIECLUB_DATA_DIR=${{ secrets.MOVIECLUB_DATA_DIR }}" >> .env
           echo "CF_ACCESS_DOMAIN=${{ secrets.CF_ACCESS_DOMAIN }}" >> .env
           echo "CF_ACCESS_AUD=${{ secrets.CF_ACCESS_AUD }}" >> .env
           echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" >> .env

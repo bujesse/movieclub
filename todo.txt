@@ -1,15 +1,14 @@
-# MVP
+# Features
+* Add a page to see the current movie club details (date, time, movie list picked, how many upvotes it got, etc)
+* Logic to pick the movie that won the most votes
+* Ensure genres are ranked by frequency
+* back button on modal?
 * archive movie clubs that have happened and create a page for them to see who voted for what
   * hide lists that have already happened from the main page (denormalize?)
-
-# Deploy
-* dockerize
-* set up github actions to build/deploy
 
 # Post MVP
 * possibly see if there's a better way to print names
 * add tests
-* add optional flag
 * add graveyard for lists that didn't get picked (auto expire after 2 months with 0 votes?)
   * add isArchived flag - remember to filter out archived lists from main page
 * add a gallery for all movies seen in the club
@@ -17,12 +16,16 @@
     * runtime
     * director
     * display total runtime
-* add some sort of dev page to edit dates, delete lists, etc
+* add some sort of dev admin ability to edit dates, delete lists, etc
 * Add a page that shows historical lists
     * Links to discord forums
 * Reset votes every 2 weeks
 * If a list doesn't get picked in 2 months, archive it
 * Clear votes button?
+* Aggregate popularity and show it on the list card for the most popular lists
+* DB backups
+* favicon
+* Add optional flag, but maybe not
     
 
 # Tech Debt

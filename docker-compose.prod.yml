@@ -1,3 +1,7 @@
+networks:
+  homelab-public:
+    external: true
+
 services:
   web:
     build:
@@ -5,11 +9,20 @@ services:
       dockerfile: Dockerfile
     container_name: movieclub
     restart: unless-stopped
+    user: '1000:1000'
     env_file:
       - .env
-    ports:
-      - '8092:3000'
     volumes:
-      - ./:/app/data
+      - ${MOVIECLUB_DATA_DIR}:/app/data
     environment:
       DATABASE_URL: file:/app/data/movieclub.db
+    networks:
+      - homelab-public
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.movieclub.entrypoints=https'
+      - 'traefik.http.routers.movieclub.rule=Host(`${PUBLIC_HOST}`)'
+      - 'traefik.http.routers.movieclub.tls=true'
+      - 'traefik.http.routers.movieclub.tls.certresolver=production'
+      - 'traefik.http.routers.movieclub.middlewares=authelia@docker'
+      - 'traefik.http.services.movieclub.loadbalancer.server.port=3000'
