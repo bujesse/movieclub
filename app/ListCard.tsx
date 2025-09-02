@@ -33,13 +33,6 @@ export default function ListCard({
   // Genres (deduped across movies)
   const genreIds = new Set<number>()
   list.movies.forEach((m) => ((m.genres as number[]) ?? []).forEach((g) => genreIds.add(g)))
-  const genres = Array.from(genreIds)
-    .map((id) => GENRES[id])
-    .filter(Boolean)
-    .slice(0, 5)
-
-  // Show a few titles, not the whole list
-  const top = list.movies.slice(0, 6)
 
   const handleUpvote = async () => {
     if (pending) return
@@ -112,126 +105,7 @@ export default function ListCard({
         </div>
       </header>
 
-      <div
-        className="card-content"
-        style={{
-          flex: '1 1 auto', // auto here refers to filling remaining space with buttons
-          minHeight: 0, // prevents overflow issues in some browsers
-        }}
-      >
-        <div className="columns is-variable is-4 is-align-items-start is-multiline">
-          {/* Left: Poster carousel */}
-          <div className="column is-full-mobile is-narrow has-text-centered-mobile">
-            <PosterCarousel movies={list.movies} intervalMs={5000} />
-          </div>
-
-          {/* Right: Details */}
-          <div className="column is-full-mobile">
-            {/* Movie List */}
-            <div className="content movie-list">
-              {top.map((m, i) => (
-                <a
-                  href={`https://letterboxd.com/tmdb/${m.tmdbId}`}
-                  target="_blank"
-                  key={(m.id ?? i) as React.Key}
-                  className="movie-item"
-                  role="button"
-                  tabIndex={0}
-                  title="View on Letterboxd"
-                >
-                  <div className="movie-text">
-                    <div className="movie-title">
-                      <strong>{m.title}</strong>
-                      {m.inMultipleLists && (
-                        <span
-                          title="This movie appears in multiple lists"
-                          aria-label="In multiple lists"
-                        >
-                          🔥
-                        </span>
-                      )}
-                    </div>
-                    {m.releaseDate && (
-                      <div className="movie-meta">{new Date(m.releaseDate).getFullYear()}</div>
-                    )}
-                  </div>
-                  <span className="movie-chevron">›</span>
-                </a>
-              ))}
-            </div>
-            <style jsx>{`
-              .movie-item {
-                padding: 0.6rem 0.75rem;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                cursor: pointer;
-                transition: background 0.2s;
-              }
-
-              .movie-item:last-child {
-                border-bottom: none;
-              }
-
-              .movie-item:hover {
-                background: rgba(255, 255, 255, 0.08);
-                color: #fff;
-              }
-
-              .movie-text {
-                display: flex;
-                flex-direction: column;
-                gap: 0.2rem;
-              }
-
-              .movie-title {
-                font-weight: 600;
-              }
-
-              .movie-meta {
-                font-size: 0.8rem;
-                color: #aaa;
-              }
-
-              .movie-item:hover .movie-meta {
-                color: #ddd;
-              }
-
-              .movie-chevron {
-                font-size: 1.2rem;
-                color: #888;
-                margin-left: 1rem;
-                transition: color 0.2s;
-              }
-
-              .movie-item:hover .movie-chevron {
-                color: #fff;
-              }
-            `}</style>
-
-            {/* Genres */}
-            {genres.length > 0 && (
-              <div className="tags mb-3 is-justify-content-center is-align-items-center is-flex-mobile">
-                {genres.map((g) => (
-                  <span key={g} className="tag is-dark">
-                    {g}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        {list.description && (
-          <p
-            id="list-description"
-            className="list-description mt-3 has-text-grey-light is-size-7 has-text-centered"
-            title={list.description}
-          >
-            {list.description}
-          </p>
-        )}
-      </div>
+      <MovieList list={list} />
 
       <footer className="card-footer">
         <button
@@ -266,6 +140,146 @@ export default function ListCard({
           </>
         )}
       </footer>
+    </div>
+  )
+}
+
+export function MovieList({ list }: { list: MovieListAllWithFlags }) {
+  // Count genres across all movies
+  const genreCounts = new Map<number, number>()
+  list.movies.forEach((m) => {
+    return (m.genres as number[]).forEach((g) => {
+      genreCounts.set(g, (genreCounts.get(g) ?? 0) + 1)
+    })
+  })
+
+  // Sort by frequency (desc), then map to names
+  const genres = Array.from(genreCounts.entries())
+    .sort((a, b) => b[1] - a[1]) // sort by count
+    .map(([id]) => GENRES[id])
+    .filter(Boolean)
+    .slice(0, 6)
+
+  return (
+    <div
+      className="card-content"
+      style={{
+        flex: '1 1 auto', // auto here refers to filling remaining space with buttons
+        minHeight: 0, // prevents overflow issues in some browsers
+      }}
+    >
+      <div className="columns is-variable is-4 is-align-items-start is-multiline">
+        {/* Left: Poster carousel */}
+        <div className="column is-full-mobile is-narrow has-text-centered-mobile">
+          <PosterCarousel movies={list.movies} intervalMs={5000} />
+        </div>
+
+        {/* Right: Details */}
+        <div className="column is-full-mobile">
+          {/* Movie List */}
+          <div className="content movie-list">
+            {list.movies.map((m, i) => (
+              <a
+                href={`https://letterboxd.com/tmdb/${m.tmdbId}`}
+                target="_blank"
+                key={(m.id ?? i) as React.Key}
+                className="movie-item"
+                role="button"
+                tabIndex={0}
+                title="View on Letterboxd"
+              >
+                <div className="movie-text">
+                  <div className="movie-title">
+                    <strong>{m.title}</strong>
+                    {m.inMultipleLists && (
+                      <span
+                        title="This movie appears in multiple lists"
+                        aria-label="In multiple lists"
+                      >
+                        🔥
+                      </span>
+                    )}
+                  </div>
+                  {m.releaseDate && (
+                    <div className="movie-meta">{new Date(m.releaseDate).getFullYear()}</div>
+                  )}
+                </div>
+                <span className="movie-chevron">›</span>
+              </a>
+            ))}
+          </div>
+          <style jsx>{`
+            .movie-item {
+              padding: 0.6rem 0.75rem;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              cursor: pointer;
+              transition: background 0.2s;
+            }
+
+            .movie-item:last-child {
+              border-bottom: none;
+            }
+
+            .movie-item:hover {
+              background: rgba(255, 255, 255, 0.08);
+              color: #fff;
+            }
+
+            .movie-text {
+              display: flex;
+              flex-direction: column;
+              gap: 0.2rem;
+            }
+
+            .movie-title {
+              font-weight: 600;
+            }
+
+            .movie-meta {
+              font-size: 0.8rem;
+              color: #aaa;
+            }
+
+            .movie-item:hover .movie-meta {
+              color: #ddd;
+            }
+
+            .movie-chevron {
+              font-size: 1.2rem;
+              color: #888;
+              margin-left: 1rem;
+              transition: color 0.2s;
+            }
+
+            .movie-item:hover .movie-chevron {
+              color: #fff;
+            }
+          `}</style>
+
+          {/* Genres */}
+          {genres.length > 0 && (
+            <div className="tags mb-3 is-justify-content-center is-align-items-center is-flex-mobile">
+              {genres.map((g) => (
+                <span key={g} className="tag is-dark">
+                  {g}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      {list.description && (
+        <p
+          id="list-description"
+          className="list-description mt-3 has-text-grey-light is-size-7 has-text-centered"
+          title={list.description}
+        >
+          {list.description}
+        </p>
+      )}
     </div>
   )
 }

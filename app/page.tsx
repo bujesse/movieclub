@@ -5,6 +5,7 @@ import ListModal from './ListModal'
 import ListCard from './ListCard'
 import { Prisma } from '@prisma/client'
 import { useRouter } from 'next/navigation'
+import NextMeetupCard from './NextMeetupCard'
 
 export type MovieListAll = Prisma.MovieListGetPayload<{
   include: {
@@ -131,6 +132,8 @@ export default function HomePage() {
 
   return (
     <section className="section">
+      <NextMeetupCard />
+
       <div className="container has-text-centered mb-5">
         <h2 className="title">Movie Lists</h2>
         <button className="button is-primary is-medium mt-3" onClick={handleCreateNewList}>

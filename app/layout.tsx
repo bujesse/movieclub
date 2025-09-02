@@ -5,6 +5,7 @@ import { getIdentity } from '../lib/cfAccess'
 import CurrentUserProvider from './CurrentUserProvider'
 import { prisma } from '../lib/prisma'
 import { VotesProvider } from './VotesProvider'
+import { NextMeetupProvider } from './NextMeetupContext'
 
 export const metadata = {
   title: 'Movie Club',
@@ -19,7 +20,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nextMeetup = await prisma.meetup.findFirst({
     where: { date: { gt: new Date() } },
     orderBy: { date: 'asc' },
-    select: { id: true, date: true },
+    select: {
+      id: true,
+      date: true,
+      movieListId: true,
+      movieList: {
+        include: { movies: true, votes: true },
+      },
+    },
   })
   const nextMeetupIso = nextMeetup?.date?.toISOString() ?? null
 
@@ -40,12 +48,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Sticky Header */}
         <CurrentUserProvider user={me}>
           <VotesProvider initialUsed={voteCount}>
-            <Header nextMeetupIso={nextMeetupIso} />
+            <NextMeetupProvider nextMeetup={nextMeetup}>
+              <Header nextMeetupIso={nextMeetupIso} />
 
-            {/* Main Content */}
-            <main className="container" style={{ minHeight: '75vh' }}>
-              {children}
-            </main>
+              {/* Main Content */}
+              <main className="container" style={{ minHeight: '75vh' }}>
+                {children}
+              </main>
+            </NextMeetupProvider>
           </VotesProvider>
         </CurrentUserProvider>
       </body>
