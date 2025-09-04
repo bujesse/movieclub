@@ -1,12 +1,14 @@
 # Features
-* Add how many upvotes the next meetup list got
 * When the timer runs out:
     * Logic to pick the movie that won the most votes
     * Reset votes (should happen automatically when a new meetup is considered "next")
-* back button on modal?
+* don't clear out form values on modal close if making new list
 * archive movie clubs that have happened and create a page for them to see who voted for what
   * hide lists that have already happened from the main page (denormalize?)
 * add some sort of dev admin ability to edit dates, delete lists, etc
+* Add how many upvotes the next meetup list got
+* add an icon to indicate that a movie has already been seen in a current or past Meetup
+    * show in the typeahead too
 
 # Post MVP
 * possibly see if there's a better way to print names
@@ -18,10 +20,10 @@
     * runtime
     * director
     * display total runtime
-* Add a page that shows historical lists
-    * Links to discord forums
 * If a list doesn't get picked in 2 months, archive it
-* Clear votes button?
+* Click on your votes
+    * See what you voted for?
+    * Clear your own votes button?
 * Aggregate tmdb popularity and show it on the list card for the most popular lists
 * DB backups
 * favicon

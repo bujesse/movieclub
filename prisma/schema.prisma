@@ -87,3 +87,15 @@ model Meetup {
   movieListId Int?       @unique
   Vote        Vote[]
 }
+
+model Seen {
+  userId   String
+  tmdbId   Int
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now()) @updatedAt
+
+  @@id([userId, tmdbId])
+  @@index([tmdbId])
+  @@index([userId])
+}

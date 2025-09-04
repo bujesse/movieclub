@@ -18,10 +18,13 @@ export type MovieListAllWithFlags = Omit<MovieListAll, 'movies'> & {
   movies: (MovieListAll['movies'][number] & {
     inMultipleLists: boolean
     listCount: number
+    seenBy: string[]
+    seenCount: number
+    hasSeen: boolean
   })[]
 }
 
-function withDuplicateFlags(lists: MovieListAll[]): MovieListAllWithFlags[] {
+function withDuplicateFlags(lists: MovieListAllWithFlags[]): MovieListAllWithFlags[] {
   // Count how many lists each movie appears in (by tmdbId if present, else by id)
   const counts = new Map<number, number>()
   for (const list of lists) {
@@ -106,7 +109,7 @@ export default function HomePage() {
           modalMode === 'edit' && initialList
             ? prev.map((l) => (l.id === data.id ? data : l))
             : [data, ...prev]
-        return withDuplicateFlags(next as MovieListAll[])
+        return withDuplicateFlags(next as MovieListAllWithFlags[])
       })
 
       setIsModalOpen(false)
@@ -119,7 +122,9 @@ export default function HomePage() {
   }
 
   const handleDeleteList = (id: number) => {
-    setLists((prev) => withDuplicateFlags(prev.filter((l) => l.id !== id) as MovieListAll[]))
+    setLists((prev) =>
+      withDuplicateFlags(prev.filter((l) => l.id !== id) as MovieListAllWithFlags[])
+    )
   }
 
   const handleEditList = (id: number) => {
@@ -130,9 +135,22 @@ export default function HomePage() {
     setIsModalOpen(true)
   }
 
+  const onToggleSeen = (tmdbId: number, hasSeen: boolean) => {
+    setLists((prev) =>
+      prev.map((l) => ({
+        ...l,
+        movies: l.movies.map((m) =>
+          m.tmdbId === tmdbId
+            ? { ...m, hasSeen: !hasSeen, seenCount: m.seenCount + (hasSeen ? -1 : 1) }
+            : m
+        ),
+      }))
+    )
+  }
+
   return (
     <section className="section">
-      <NextMeetupCard />
+      <NextMeetupCard onToggleSeen={onToggleSeen} />
 
       <div className="container has-text-centered mb-5">
         <h2 className="title">Movie Lists</h2>
@@ -148,7 +166,12 @@ export default function HomePage() {
           <div className="grid is-row-gap-5 is-column-gap-4 is-multiline">
             {lists.map((l) => (
               <div key={l.id} className="cell">
-                <ListCard list={l} onDelete={handleDeleteList} onEdit={handleEditList} />
+                <ListCard
+                  onToggleSeen={onToggleSeen}
+                  list={l}
+                  onDelete={handleDeleteList}
+                  onEdit={handleEditList}
+                />
               </div>
             ))}
           </div>

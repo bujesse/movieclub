@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../lib/prisma'
 import { normalizeMovies } from '../../../lib/helpers'
+import { getIdentityFromRequest } from '../../../lib/cfAccess'
+import { enrichLists } from '../../../lib/enrichLists'
 
 // GET movie lists not associated with a meetup,
 // Sorted by number of votes (desc) then createdAt (asc)
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const user = await getIdentityFromRequest(req)
+  if (!user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const lists = await prisma.movieList.findMany({
     where: {
       Meetup: null,
@@ -26,7 +31,9 @@ export async function GET() {
     return a.createdAt.getTime() - b.createdAt.getTime()
   })
 
-  return NextResponse.json(lists)
+  const enriched = await enrichLists(lists, user.email)
+
+  return NextResponse.json(enriched)
 }
 
 export async function POST(req: NextRequest) {

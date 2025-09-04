@@ -8,15 +8,18 @@ import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
 import { formatDistanceToNowStrict } from 'date-fns'
+import { Eye, EyeClosed } from 'lucide-react'
 
 export default function ListCard({
   list,
   onEdit,
   onDelete,
+  onToggleSeen,
 }: {
   list: MovieListAllWithFlags
   onEdit: (id: number) => void
   onDelete: (id: number) => void
+  onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
 }) {
   const me = useCurrentUser()
   const myEmail = me!.email
@@ -105,7 +108,7 @@ export default function ListCard({
         </div>
       </header>
 
-      <MovieList list={list} />
+      <MovieList list={list} onToggleSeen={onToggleSeen} />
 
       <footer className="card-footer">
         <button
@@ -144,7 +147,15 @@ export default function ListCard({
   )
 }
 
-export function MovieList({ list }: { list: MovieListAllWithFlags }) {
+export function MovieList({
+  list,
+  onToggleSeen,
+}: {
+  list: MovieListAllWithFlags
+  onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
+}) {
+  const router = useRouter()
+
   // Count genres across all movies
   const genreCounts = new Map<number, number>()
   list.movies.forEach((m) => {
@@ -159,6 +170,14 @@ export function MovieList({ list }: { list: MovieListAllWithFlags }) {
     .map(([id]) => GENRES[id])
     .filter(Boolean)
     .slice(0, 6)
+
+  const handleSeenClick = async (e: React.MouseEvent, tmdbId: number, hasSeen: boolean) => {
+    e.preventDefault()
+    e.stopPropagation()
+    await fetch(`/api/movies/${tmdbId}/seen`, { method: hasSeen ? 'DELETE' : 'POST' })
+    onToggleSeen && onToggleSeen(tmdbId, hasSeen)
+    router.refresh()
+  }
 
   return (
     <div
@@ -179,38 +198,45 @@ export function MovieList({ list }: { list: MovieListAllWithFlags }) {
           {/* Movie List */}
           <div className="content movie-list">
             {list.movies.map((m, i) => (
-              <a
-                href={`https://letterboxd.com/tmdb/${m.tmdbId}`}
-                target="_blank"
-                key={(m.id ?? i) as React.Key}
-                className="movie-item"
-                role="button"
-                tabIndex={0}
-                title="View on Letterboxd"
-              >
-                <div className="movie-text">
-                  <div className="movie-title">
-                    <strong>{m.title}</strong>
-                    {m.inMultipleLists && (
-                      <span
-                        title="This movie appears in multiple lists"
-                        aria-label="In multiple lists"
-                      >
-                        🔥
-                      </span>
+              <div key={(m.id ?? i) as React.Key} className="movie-item">
+                <a
+                  href={`https://letterboxd.com/tmdb/${m.tmdbId}`}
+                  className="movie-link"
+                  target="_blank"
+                  role="button"
+                  tabIndex={0}
+                  title="View on Letterboxd"
+                >
+                  <div className="movie-text">
+                    <div className="movie-title">
+                      <strong>{m.title}</strong>
+                      {m.inMultipleLists && (
+                        <span
+                          title="This movie appears in multiple lists"
+                          aria-label="In multiple lists"
+                        >
+                          🔥
+                        </span>
+                      )}
+                    </div>
+                    {m.releaseDate && (
+                      <div className="movie-meta">{new Date(m.releaseDate).getFullYear()}</div>
                     )}
                   </div>
-                  {m.releaseDate && (
-                    <div className="movie-meta">{new Date(m.releaseDate).getFullYear()}</div>
-                  )}
+                </a>
+                <div
+                  onClick={(e) => handleSeenClick(e, m.tmdbId, m.hasSeen)}
+                  className={`seen pl-2 is-size-7 ${m.hasSeen ? 'has-text-success' : 'has-text-grey-light'}`}
+                >
+                  <span className={`is-size-7`}>{m.seenCount}</span>
+                  {m.hasSeen ? <Eye /> : <EyeClosed />}
                 </div>
-                <span className="movie-chevron">›</span>
-              </a>
+              </div>
             ))}
           </div>
           <style jsx>{`
             .movie-item {
-              padding: 0.6rem 0.75rem;
+              padding: 0;
               border-bottom: 1px solid rgba(255, 255, 255, 0.1);
               display: flex;
               align-items: center;
@@ -223,7 +249,14 @@ export function MovieList({ list }: { list: MovieListAllWithFlags }) {
               border-bottom: none;
             }
 
-            .movie-item:hover {
+            .movie-link {
+              padding: 0.6rem 0.75rem;
+              flex: 1;
+              padding-right: 0.75rem;
+              display: block;
+            }
+
+            .movie-link:hover {
               background: rgba(255, 255, 255, 0.08);
               color: #fff;
             }
@@ -243,19 +276,14 @@ export function MovieList({ list }: { list: MovieListAllWithFlags }) {
               color: #aaa;
             }
 
-            .movie-item:hover .movie-meta {
+            .movie-link:hover .movie-meta {
               color: #ddd;
             }
 
-            .movie-chevron {
-              font-size: 1.2rem;
-              color: #888;
-              margin-left: 1rem;
-              transition: color 0.2s;
-            }
-
-            .movie-item:hover .movie-chevron {
-              color: #fff;
+            .seen {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
             }
           `}</style>
 

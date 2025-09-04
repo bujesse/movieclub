@@ -1,11 +1,11 @@
 import 'bulma/css/bulma.min.css'
-import './globals.css'
+import './global.css'
 import Header from './Header'
 import { getIdentity } from '../lib/cfAccess'
 import CurrentUserProvider from './CurrentUserProvider'
-import { prisma } from '../lib/prisma'
 import { VotesProvider } from './VotesProvider'
 import { NextMeetupProvider } from './NextMeetupContext'
+import { loadRootData } from '../lib/loadRootData'
 
 export const metadata = {
   title: 'Movie Club',
@@ -16,26 +16,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const id = await getIdentity()
   const me = id ? { email: id.email ?? null, name: id.name ?? null } : null
 
-  // Meetup is always the next upcoming one
-  const nextMeetup = await prisma.meetup.findFirst({
-    where: { date: { gt: new Date() } },
-    orderBy: { date: 'asc' },
-    select: {
-      id: true,
-      date: true,
-      movieListId: true,
-      movieList: {
-        include: { movies: true, votes: true },
-      },
-    },
-  })
-  const nextMeetupIso = nextMeetup?.date?.toISOString() ?? null
-
-  // Votes are scoped to user + meetup
-  let voteCount = 0
-  if (me?.email && nextMeetup?.id) {
-    voteCount = await prisma.vote.count({ where: { userId: me.email, meetupId: nextMeetup.id } })
-  }
+  const { nextMeetup, nextMeetupIso, voteCount } = await loadRootData(me?.email)
 
   return (
     <html lang="en" className="has-navbar-fixed-top">

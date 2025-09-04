@@ -6,7 +6,11 @@ import { format } from 'date-fns'
 import { MovieList } from './ListCard'
 import { MovieListAllWithFlags } from './page'
 
-export default function NextMeetupCard() {
+export default function NextMeetupCard({
+  onToggleSeen,
+}: {
+  onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
+}) {
   const [open, setOpen] = useState(false)
 
   const nextMeetup = useNextMeetup()
@@ -38,7 +42,7 @@ export default function NextMeetupCard() {
           <span className={`chevron ${open ? 'rotated' : ''}`}>▼</span>
           &nbsp;&nbsp;Movies
         </div>
-        {open && <MovieList list={list as MovieListAllWithFlags} />}
+        {open && <MovieList list={list as MovieListAllWithFlags} onToggleSeen={onToggleSeen} />}
       </div>
       <style jsx>{`
         .chevron {
