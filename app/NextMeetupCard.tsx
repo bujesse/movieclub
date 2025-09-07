@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useNextMeetup } from './NextMeetupContext'
-import { format } from 'date-fns'
+import { format, formatDistanceToNowStrict } from 'date-fns'
 import { MovieList } from './ListCard'
 import { MovieListAllWithFlags } from './page'
 
@@ -13,11 +13,29 @@ export default function NextMeetupCard({
 }) {
   const [open, setOpen] = useState(false)
 
-  const nextMeetup = useNextMeetup()
-  if (!nextMeetup || !nextMeetup.movieList) return null
+  const { nextMeetup, pollsCloseAt } = useNextMeetup()
+  if (!nextMeetup) return null
 
-  const list = nextMeetup.movieList
   const meetupDate = format(nextMeetup.date!, 'EEE, MMM d, h:mm a') // e.g., "Tue, Sep 2, 7:30 PM"
+
+  if (!nextMeetup.movieList && pollsCloseAt) {
+    return (
+      <div
+        className="box mb-5 has-background-black-ter"
+        style={{ border: '1px solid #ffdd57', borderRadius: '4px' }}
+      >
+        <p className="has-text-grey-light is-uppercase is-size-7 mb-1">
+          Next Meetup - {meetupDate}
+        </p>
+        <strong className="is-size-5 has-text-warning">
+          Polls close {format(pollsCloseAt, 'EEE, MMM d, h:mm a')} (
+          {formatDistanceToNowStrict(pollsCloseAt, { addSuffix: true })})
+        </strong>
+      </div>
+    )
+  }
+
+  const list = nextMeetup.movieList!
 
   return (
     <div

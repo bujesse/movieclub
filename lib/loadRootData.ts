@@ -14,7 +14,7 @@ export async function loadRootData(meEmail?: string | null) {
   })
 
   if (!raw) {
-    return { nextMeetup: null, nextMeetupIso: null, voteCount: 0 }
+    return { nextMeetup: null, voteCount: 0 }
   }
 
   const enrichedMovieList = raw.movieList
@@ -27,7 +27,6 @@ export async function loadRootData(meEmail?: string | null) {
 
   return {
     nextMeetup: { ...raw, movieList: enrichedMovieList },
-    nextMeetupIso: raw.date?.toISOString() ?? null,
     voteCount,
   }
 }

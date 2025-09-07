@@ -30,7 +30,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <CurrentUserProvider user={me}>
           <VotesProvider initialUsed={voteCount}>
             <NextMeetupProvider nextMeetup={nextMeetup}>
-              <Header nextMeetupIso={nextMeetupIso} />
+              <Header />
 
               {/* Main Content */}
               <main className="container" style={{ minHeight: '75vh' }}>

@@ -4,9 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
 import { format, formatDistanceToNowStrict } from 'date-fns'
+import { useNextMeetup } from './NextMeetupContext'
 
-export default function Header({ nextMeetupIso }: { nextMeetupIso?: string | null }) {
+export default function Header() {
   const { usedVotes, maxVotes } = useVotes()
+  const { nextMeetup } = useNextMeetup()
+  const nextMeetupIso = nextMeetup?.date?.toISOString() ?? null
   const me = useCurrentUser()
   const display = me?.name ?? (me?.email ? me.email.split('@')[0] : null)
 
@@ -35,7 +38,9 @@ export default function Header({ nextMeetupIso }: { nextMeetupIso?: string | nul
         }}
       >
         <a className="navbar-item" href="/">
-          <strong>🎬 Movie Club</strong>
+          <strong>
+            🎬 <span className="is-hidden-touch">Movie Club</span>
+          </strong>
         </a>
 
         {targetDate && (
@@ -51,7 +56,7 @@ export default function Header({ nextMeetupIso }: { nextMeetupIso?: string | nul
           <p className="is-hidden-mobile">{display}</p>
           <span
             className={`tag is-size-7-mobile is-medium ${
-              usedVotes < maxVotes ? 'is-success' : 'is-danger is-light'
+              usedVotes < maxVotes ? 'is-white' : 'is-danger is-light'
             }`}
           >
             Votes:&nbsp;
@@ -84,13 +89,13 @@ function ToggleTime({ target }: { target: Date }) {
       tabIndex={0}
       onClick={() => setShowAbsolute((s) => !s)}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setShowAbsolute((s) => !s)}
-      className="is-size-7-mobile tag is-warning is-medium"
+      className="is-size-7-mobile tag is-info is-medium"
       style={{ cursor: 'pointer', userSelect: 'none' }}
       aria-pressed={showAbsolute}
       suppressHydrationWarning
       title="Click to toggle time display"
     >
-      <span className="is-hidden-touch">Next meetup:&nbsp;</span>
+      <span>Next meetup:&nbsp;</span>
       <span className="has-text-weight-semibold">{showAbsolute ? abs : rel}</span>
     </span>
   )
