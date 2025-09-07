@@ -13,6 +13,7 @@ jobs:
 
       - name: Write env file
         run: |
+          echo "ADMIN_EMAILS=${{ secrets.ADMIN_EMAILS }}" >> .env
           echo "PUBLIC_HOST=${{ secrets.PUBLIC_HOST }}" >> .env
           echo "MOVIECLUB_DATA_DIR=${{ secrets.MOVIECLUB_DATA_DIR }}" >> .env
           echo "CF_ACCESS_DOMAIN=${{ secrets.CF_ACCESS_DOMAIN }}" >> .env
@@ -34,6 +35,7 @@ jobs:
 
       - name: Write env file
         run: |
+          echo "ADMIN_EMAILS=${{ secrets.ADMIN_EMAILS }}" >> .env
           echo "PUBLIC_HOST=${{ secrets.PUBLIC_HOST }}" >> .env
           echo "MOVIECLUB_DATA_DIR=${{ secrets.MOVIECLUB_DATA_DIR }}" >> .env
           echo "CF_ACCESS_DOMAIN=${{ secrets.CF_ACCESS_DOMAIN }}" >> .env

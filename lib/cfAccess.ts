@@ -12,6 +12,20 @@ if (!DOMAIN || !AUDIENCE) {
 const ISSUER = `https://${DOMAIN}`
 const JWKS = createRemoteJWKSet(new URL(`${ISSUER}/cdn-cgi/access/certs`))
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '')
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean)
+
+function computeIsAdmin(email?: string, claims?: Record<string, unknown>) {
+  const e = email?.toLowerCase()
+  if (!e) return false
+  if (ADMIN_EMAILS.includes(e)) return true
+  const roles = (claims?.roles as string[] | undefined) ?? []
+  const groups = (claims?.groups as string[] | undefined) ?? []
+  return roles.includes('admin') || groups.includes('admin')
+}
+
 export type CfIdentity = {
   sub?: string
   email: string
@@ -25,6 +39,7 @@ export type CfIdentity = {
     preferred_username?: string
   }
   claims?: JWTPayload & Record<string, unknown> // full raw claims
+  isAdmin?: boolean // Not actually part of the JWT
 }
 
 const HEADER = 'Cf-Access-Jwt-Assertion'
@@ -48,6 +63,7 @@ async function verify(token: string): Promise<CfIdentity> {
     sub,
     email,
     name,
+    isAdmin: computeIsAdmin(email, payload as any),
     iss: (p.iss as string) ?? ISSUER,
     aud: (p.aud as string | string[]) ?? AUDIENCE,
     exp: p.exp as number | undefined,
@@ -95,6 +111,7 @@ function checkDev() {
     return {
       email: process.env.DEV_EMAIL ?? 'dev.user@gmail.com',
       name: process.env.DEV_NAME ?? 'Dev User',
+      isAdmin: computeIsAdmin(process.env.DEV_EMAIL),
       custom: {
         preferred_username: process.env.DEV_NAME ?? 'dev',
       },

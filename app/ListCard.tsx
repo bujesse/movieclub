@@ -28,6 +28,7 @@ export default function ListCard({
 
   const initialScore = (list.votes ?? []).reduce((a, v) => a + v.value, 0)
   const [score, setScore] = useState(initialScore)
+  const [allTimeScore, setAllTimeScore] = useState(list.votesTotal)
   const [hasVoted, setHasVoted] = useState(list.votes.some((v) => v.userId === myEmail))
   const [pending, setPending] = useState(false)
   const [areYouSure, setAreYouSure] = useState(false)
@@ -51,7 +52,10 @@ export default function ListCard({
       if (!res.ok) return
       const data = await res.json()
       setHasVoted(data.hasVoted)
-      if (typeof data.score === 'number') setScore(data.score)
+      if (typeof data.score === 'number') {
+        setScore(data.score)
+        setAllTimeScore(data.allTimeScore)
+      }
       router.refresh()
     } finally {
       setPending(false)
@@ -122,6 +126,7 @@ export default function ListCard({
             <span>{hasVoted ? '▲' : '△'}</span>
           </span>
           <span className="ml-2 has-text-weight-semibold">{score}</span>
+          <span className="ml-2 has-text-grey-light">({allTimeScore})</span>
           {hasVoted && <span className="ml-2 is-size-7 has-text-success">Voted</span>}
         </button>
         {wasCreatedByMe && (

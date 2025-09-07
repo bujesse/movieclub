@@ -14,9 +14,11 @@ export const metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const id = await getIdentity()
-  const me = id ? { email: id.email ?? null, name: id.name ?? null } : null
+  const me = id
+    ? { email: id.email ?? null, name: id.name ?? null, isAdmin: id.isAdmin === true }
+    : null
 
-  const { nextMeetup, nextMeetupIso, voteCount } = await loadRootData(me?.email)
+  const { nextMeetup, voteCount } = await loadRootData(me?.email)
 
   return (
     <html lang="en" className="has-navbar-fixed-top">

@@ -11,7 +11,8 @@ export default function Header() {
   const { nextMeetup } = useNextMeetup()
   const nextMeetupIso = nextMeetup?.date?.toISOString() ?? null
   const me = useCurrentUser()
-  const display = me?.name ?? (me?.email ? me.email.split('@')[0] : null)
+  const isAdmin = me?.isAdmin ?? false
+  const display = (me?.email ? me.email.split('@')[0] : null) + (isAdmin ? ' (admin)' : '')
 
   const targetDate = useMemo(() => {
     if (nextMeetupIso) {
@@ -56,7 +57,7 @@ export default function Header() {
           <p className="is-hidden-mobile">{display}</p>
           <span
             className={`tag is-size-7-mobile is-medium ${
-              usedVotes < maxVotes ? 'is-white' : 'is-danger is-light'
+              usedVotes < maxVotes ? 'is-white' : 'is-success'
             }`}
           >
             Votes:&nbsp;

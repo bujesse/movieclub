@@ -1,32 +1,32 @@
 import { prisma } from './prisma'
 import { enrichLists } from './enrichLists'
+import { getNextMeetupWithList, getNextMeetupWithoutList } from './dbHelpers'
 
 export async function loadRootData(meEmail?: string | null) {
-  const raw = await prisma.meetup.findFirst({
-    where: { date: { gt: new Date() } },
-    orderBy: { date: 'asc' },
-    select: {
-      id: true,
-      date: true,
-      movieListId: true,
-      movieList: { include: { movies: true, votes: true } },
-    },
-  })
+  let raw = await getNextMeetupWithList(prisma)
+  const nextMeetupWithoutList = await getNextMeetupWithoutList(prisma)
 
   if (!raw) {
-    return { nextMeetup: null, voteCount: 0 }
+    raw = nextMeetupWithoutList
+  }
+
+  if (!raw || !nextMeetupWithoutList) {
+    return {
+      nextMeetup: null,
+      voteCount: 0,
+    }
   }
 
   const enrichedMovieList = raw.movieList
     ? (await enrichLists([raw.movieList], meEmail ?? undefined))[0]
     : null
 
-  const voteCount = meEmail
-    ? await prisma.vote.count({ where: { userId: meEmail, meetupId: raw.id } })
+  const myVoteCount = meEmail
+    ? await prisma.vote.count({ where: { userId: meEmail, meetupId: nextMeetupWithoutList.id } })
     : 0
 
   return {
     nextMeetup: { ...raw, movieList: enrichedMovieList },
-    voteCount,
+    voteCount: myVoteCount,
   }
 }

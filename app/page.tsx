@@ -15,6 +15,7 @@ export type MovieListAll = Prisma.MovieListGetPayload<{
 }>
 
 export type MovieListAllWithFlags = Omit<MovieListAll, 'movies'> & {
+  votesTotal: string[]
   movies: (MovieListAll['movies'][number] & {
     inMultipleLists: boolean
     listCount: number

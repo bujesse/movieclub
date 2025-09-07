@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from 'react'
 
-type Me = { email: string; name: string | null } | null
+type Me = { email: string; name: string | null; isAdmin: boolean } | null
 const Ctx = createContext<Me>(null)
 
 export default function CurrentUserProvider({
