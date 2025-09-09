@@ -16,7 +16,6 @@ services:
       - ${MOVIECLUB_DATA_DIR}:/app/data
     environment:
       DATABASE_URL: file:/app/data/movieclub.db
-      TZ: UTC
     networks:
       - homelab-public
     labels:
