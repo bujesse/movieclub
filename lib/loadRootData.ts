@@ -3,8 +3,8 @@ import { enrichLists } from './enrichLists'
 import { getNextMeetupWithList, getNextMeetupWithoutList } from './dbHelpers'
 
 export async function loadRootData(meEmail?: string | null) {
-  const now = new Date()
-  console.log('[lr]', { now: now.toISOString(), db: process.env.DATABASE_URL })
+  const nowIso = new Date().toISOString()
+  console.log('[lr]', { now: nowIso, db: process.env.DATABASE_URL })
 
   const [withListRaw, withoutListRaw] = await Promise.all([
     getNextMeetupWithList(prisma),
@@ -24,22 +24,19 @@ export async function loadRootData(meEmail?: string | null) {
     withoutListRaw?.movieListId
   )
 
-  // Guard against any past rows slipping through
-  const withList = withListRaw && withListRaw.date! > now ? withListRaw : null
-  const withoutList = withoutListRaw && withoutListRaw.date! > now ? withoutListRaw : null
-
-  const raw =
-    [withList, withoutList].filter(Boolean).sort((a, b) => +a!.date! - +b!.date!)[0] ?? null
-
-  if (!raw) return { nextMeetup: null, voteCount: 0 }
+  // prefer future with-list; only if absent, use future without-list
+  const picked = withListRaw ?? withoutListRaw ?? null
+  if (!picked) return { nextMeetup: null, voteCount: 0 }
 
   const enrichedMovieList =
-    meEmail && raw.movieList ? (await enrichLists([raw.movieList], meEmail))[0] : raw.movieList
+    meEmail && picked.movieList
+      ? (await enrichLists([picked.movieList], meEmail))[0]
+      : picked.movieList
 
   const voteCount =
-    meEmail && withoutList
-      ? await prisma.vote.count({ where: { userId: meEmail, meetupId: withoutList.id } })
+    meEmail && !picked.movieList
+      ? await prisma.vote.count({ where: { userId: meEmail, meetupId: picked.id } })
       : 0
 
-  return { nextMeetup: { ...raw, movieList: enrichedMovieList }, voteCount }
+  return { nextMeetup: { ...picked, movieList: enrichedMovieList }, voteCount }
 }

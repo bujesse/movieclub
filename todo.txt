@@ -1,17 +1,17 @@
 # Features
+* Request: be able to comment on lists
 * Add link to the meetup in discord
 * Add how many upvotes the next meetup list got
 * archive movie clubs that have happened and create a page for them to see who voted for what
 * Progress bar for seen for next meetup - need to know how many people are in the club
-* add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
-    * show in the typeahead too
 
 # Post MVP
-* possibly see if there's a better way to print names
-* add tests
+* add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
+    * show in the typeahead too
 * add graveyard for lists that didn't get picked (auto expire after 2 months with 0 votes?)
   * add isArchived flag - remember to filter out archived lists from main page
   * some sort of indicator for list archival coming soon (clock, hourglass, etc)
+* add tests
 * add a gallery for all movies seen in the club
 * make an api call on save to get even more data from tmdb 
     * runtime
