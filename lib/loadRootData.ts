@@ -34,8 +34,8 @@ export async function loadRootData(meEmail?: string | null) {
       : picked.movieList
 
   const voteCount =
-    meEmail && !picked.movieList
-      ? await prisma.vote.count({ where: { userId: meEmail, meetupId: picked.id } })
+    withoutListRaw && meEmail && !withoutListRaw.movieList
+      ? await prisma.vote.count({ where: { userId: meEmail, meetupId: withoutListRaw.id } })
       : 0
 
   return { nextMeetup: { ...picked, movieList: enrichedMovieList }, voteCount }

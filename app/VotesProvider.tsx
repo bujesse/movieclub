@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo } from 'react'
 import { MAX_VOTES } from '../lib/config'
 
 type VotesContextValue = {
