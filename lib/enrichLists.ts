@@ -7,7 +7,6 @@ export async function enrichLists<
   },
 >(lists: T[], meEmail?: string | null) {
   const tmdbIds = Array.from(new Set(lists.flatMap((l) => l.movies.map((m) => m.tmdbId))))
-  if (tmdbIds.length === 0) return lists
 
   // Fetch "seen" data
   const seenRows = await prisma.seen.findMany({

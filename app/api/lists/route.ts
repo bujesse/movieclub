@@ -6,7 +6,7 @@ import { enrichLists } from '../../../lib/enrichLists'
 import { getNextMeetupWithoutList } from '../../../lib/dbHelpers'
 
 // GET movie lists not associated with a meetup,
-// Sorted by number of votes (desc) then createdAt (asc)
+// Sorted by current votes desc, all-time votes desc, createdAt asc
 export async function GET(req: NextRequest) {
   const user = await getIdentityFromRequest(req)
   if (!user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -29,10 +29,12 @@ export async function GET(req: NextRequest) {
 
   const enriched = await enrichLists(lists, user.email)
 
-  // Sort by votes desc, then createdAt asc
+  // Sort: current votes desc, all-time votes desc, createdAt asc
   enriched.sort((a, b) => {
-    const diff = b.votes.length - a.votes.length
-    if (diff !== 0) return diff
+    const cur = (b.votes?.length ?? 0) - (a.votes?.length ?? 0)
+    if (cur !== 0) return cur
+    const allTime = (b.votesTotal ?? 0) - (a.votesTotal ?? 0)
+    if (allTime !== 0) return allTime
     return a.createdAt.getTime() - b.createdAt.getTime()
   })
 

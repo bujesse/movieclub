@@ -45,7 +45,7 @@ export default function NextMeetupCard({
             </strong>
             <p className="is-size-6 has-text-grey-light mt-1">
               Chosen list will be the first in the lists below. Ordering is done by most votes, then
-              by oldest first.
+              all-time votes, then by oldest first.
             </p>
           </div>
           <div className="right">

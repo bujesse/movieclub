@@ -13,7 +13,7 @@ A self-hosted web app for creating, sharing, and voting on movie recommendation 
 - Edit and Delete lists that you created (Can't edit other's).
 - Vote and Unvote lists. You have 3 votes per Meetup.
 - Countdown to the next meetup (Click to see the date/time)
-- Lists are sorted by most upvotes first, _then_ oldest to newest.
+- Lists are sorted by most upvotes first, _then_ by all-time votes, _then_ oldest to newest.
   - Lists display with poster carousel and links to Letterboxd (Opens the app if you're on mobile).
   - Main page shows lists that have _not_ been selected for a meetup yet.
 

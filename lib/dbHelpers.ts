@@ -1,4 +1,3 @@
-import { prisma } from './prisma'
 import { Prisma, PrismaClient } from '@prisma/client'
 
 type Tx = PrismaClient | Prisma.TransactionClient
@@ -20,7 +19,12 @@ export async function getNextMeetupWithList(tx: Tx) {
       id: true,
       date: true,
       movieListId: true,
-      movieList: { include: { movies: true, votes: true } },
+      movieList: {
+        include: {
+          movies: true,
+          votes: true,
+        },
+      },
     },
   })
 }
