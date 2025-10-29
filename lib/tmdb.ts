@@ -1,4 +1,6 @@
-import type { TmdbMovie, TmdbResponse } from '../types/tmdb'
+import { TMDB_BASE_URL } from '../app/api/tmdb/[...path]/route'
+import type { TmdbCreditsResponse, TmdbMovie, TmdbMovieDetails, TmdbResponse } from '../types/tmdb'
+import { prisma } from './prisma'
 
 export const searchTmdb = async (q: string): Promise<TmdbMovie[]> => {
   if (!q.trim()) return []
@@ -17,4 +19,63 @@ export const tmdbImage = (path?: string | null, size: 'w200' | 'w300' | 'w500' =
   if (!path) return ''
   const p = path.startsWith('/') ? path : `/${path}`
   return `https://image.tmdb.org/t/p/${size}${p}`
+}
+
+export async function getMovieCredits(tmdbId: number): Promise<TmdbCreditsResponse> {
+  const url = new URL(`${TMDB_BASE_URL}/movie/${tmdbId}/credits`)
+  const res = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+    },
+  })
+  if (!res.ok) throw new Error('TMDB credits proxy failed')
+  const data: TmdbCreditsResponse = await res.json()
+  return data
+}
+
+export async function getMovieDetails(tmdbId: number): Promise<TmdbMovieDetails> {
+  const url = new URL(`${TMDB_BASE_URL}/movie/${tmdbId}`)
+  const res = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+    },
+  })
+
+  if (!res.ok) throw new Error('TMDB details proxy failed')
+  const data: TmdbMovieDetails = await res.json()
+  return data
+}
+
+const ACTOR_LIMIT = 10
+
+export async function saveMovieDetails(tmdbId: number) {
+  const details = await getMovieDetails(tmdbId)
+  const credits = await getMovieCredits(tmdbId)
+  const directorsList = credits.crew.filter((c) => c.job === 'Director')
+  const actorsList = credits.cast.sort((a, b) => a.order - b.order).slice(0, ACTOR_LIMIT)
+
+  await prisma.movie.updateMany({
+    where: { tmdbId },
+    data: {
+      runtime: details.runtime,
+      original_language: details.original_language ?? null,
+      popularity: details.popularity,
+      budget: details.budget,
+      revenue: details.revenue,
+      directors: directorsList.map((d) => ({
+        id: d.id,
+        name: d.name,
+        credit_id: d.credit_id,
+      })),
+      actors: actorsList.map((a) => ({
+        id: a.id,
+        name: a.name,
+        character: a.character,
+        order: a.order,
+        credit_id: a.credit_id,
+      })),
+    },
+  })
+
+  return prisma.movie.findMany({ where: { tmdbId } })
 }

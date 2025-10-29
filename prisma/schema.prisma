@@ -50,6 +50,15 @@ model Movie {
   // Genres (JSON array of ints: [28, 12, ...])
   genres Json?
 
+  // Additional details from TMDb
+  runtime           Int?
+  popularity        Int?
+  budget            Int?
+  revenue           Int?
+  original_language String?
+  directors         Json?
+  actors            Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -89,8 +98,8 @@ model Meetup {
 }
 
 model Seen {
-  userId   String
-  tmdbId   Int
+  userId String
+  tmdbId Int
 
   firstSeenAt DateTime @default(now())
   lastSeenAt  DateTime @default(now()) @updatedAt

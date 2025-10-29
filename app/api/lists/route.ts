@@ -4,6 +4,7 @@ import { normalizeMovies } from '../../../lib/helpers'
 import { getIdentityFromRequest } from '../../../lib/cfAccess'
 import { enrichLists } from '../../../lib/enrichLists'
 import { getNextMeetupWithoutList } from '../../../lib/dbHelpers'
+import { saveMovieDetails } from '../../../lib/tmdb'
 
 // GET movie lists not associated with a meetup,
 // Sorted by current votes desc, all-time votes desc, createdAt asc
@@ -53,6 +54,11 @@ export async function POST(req: NextRequest) {
       },
       include: { movies: true, votes: true },
     })
+
+    // hydrate details for new movies
+    const ids = Array.from(new Set(list.movies.map((m) => m.tmdbId)))
+    await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
+
     return NextResponse.json(list, { status: 201 })
   } catch (err: any) {
     if (err?.code === 'P2002') {
