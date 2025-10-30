@@ -11,18 +11,18 @@ export async function loadRootData(meEmail?: string | null) {
     getNextMeetupWithoutList(prisma),
   ])
 
-  console.log(
-    '[lr] withListRaw',
-    withListRaw?.id,
-    withListRaw?.date?.toISOString(),
-    withListRaw?.movieListId
-  )
-  console.log(
-    '[lr] withoutListRaw',
-    withoutListRaw?.id,
-    withoutListRaw?.date?.toISOString(),
-    withoutListRaw?.movieListId
-  )
+  // console.log(
+  //   '[lr] withListRaw',
+  //   withListRaw?.id,
+  //   withListRaw?.date?.toISOString(),
+  //   withListRaw?.movieListId
+  // )
+  // console.log(
+  //   '[lr] withoutListRaw',
+  //   withoutListRaw?.id,
+  //   withoutListRaw?.date?.toISOString(),
+  //   withoutListRaw?.movieListId
+  // )
 
   // prefer future with-list; only if absent, use future without-list
   const picked = withListRaw ?? withoutListRaw ?? null

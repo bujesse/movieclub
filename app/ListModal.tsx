@@ -21,8 +21,8 @@ export default function ListModal({
   mode?: 'create' | 'edit'
   initialList?: MovieListAll
 }) {
-  const me = useCurrentUser()
-  const myEmail = me!.email
+  const { user } = useCurrentUser()
+  const myEmail = user!.email
   const [listTitle, setListTitle] = useState('')
   const [description, setDescription] = useState('')
   const [movieInput, setMovieInput] = useState('')

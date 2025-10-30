@@ -13,8 +13,7 @@ export default function NextMeetupCard({
   onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
-  const me = useCurrentUser()
-  const isAdmin = me?.isAdmin ?? false
+  const { isAdmin } = useCurrentUser()
 
   const { nextMeetup, pollsCloseAt } = useNextMeetup()
   if (!nextMeetup) return null

@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
 import { formatDistanceToNowStrict } from 'date-fns'
-import { Eye, EyeClosed } from 'lucide-react'
+import { Eye, EyeClosed, RefreshCw } from 'lucide-react'
 
 export default function ListCard({
   list,
@@ -21,8 +21,8 @@ export default function ListCard({
   onDelete: (id: number) => void
   onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
 }) {
-  const me = useCurrentUser()
-  const myEmail = me!.email
+  const { user } = useCurrentUser()
+  const myEmail = user!.email
   const { canVote } = useVotes()
   const router = useRouter()
 
@@ -161,6 +161,8 @@ export function MovieList({
 }) {
   const router = useRouter()
 
+  const { isAdminMode } = useCurrentUser()
+
   // Count genres across all movies
   const genreCounts = new Map<number, number>()
   list.movies.forEach((m) => {
@@ -181,6 +183,13 @@ export function MovieList({
     e.stopPropagation()
     await fetch(`/api/movies/${tmdbId}/seen`, { method: hasSeen ? 'DELETE' : 'POST' })
     onToggleSeen && onToggleSeen(tmdbId, hasSeen)
+    router.refresh()
+  }
+
+  const handleRefreshClick = async (e: React.MouseEvent, tmdbId: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    await fetch(`/api/movies/${tmdbId}/updateDetails`, { method: 'POST' })
     router.refresh()
   }
 
@@ -236,6 +245,9 @@ export function MovieList({
                   <span className={`is-size-7`}>{m.seenCount}</span>
                   {m.hasSeen ? <Eye /> : <EyeClosed />}
                 </div>
+                {isAdminMode && (
+                  <RefreshCw onClick={(e) => handleRefreshClick(e, m.tmdbId)} className={'pl-2'} />
+                )}
               </div>
             ))}
           </div>

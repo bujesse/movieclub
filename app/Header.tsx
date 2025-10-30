@@ -10,9 +10,8 @@ export default function Header() {
   const { usedVotes, maxVotes } = useVotes()
   const { nextMeetup } = useNextMeetup()
   const nextMeetupIso = nextMeetup?.date?.toISOString() ?? null
-  const me = useCurrentUser()
-  const isAdmin = me?.isAdmin ?? false
-  const display = (me?.email ? me.email.split('@')[0] : null) + (isAdmin ? ' (admin)' : '')
+  const { user, isAdmin, isAdminMode, toggleAdminMode } = useCurrentUser()
+  const display = user.email ? user.email.split('@')[0] : null
 
   const targetDate = useMemo(() => {
     if (nextMeetupIso) {
@@ -40,10 +39,11 @@ export default function Header() {
       >
         <a className="navbar-item" href="/">
           <strong>
-            🎬 <span className="is-hidden-touch">Movie Club</span>
+            🎬 <span>Movie Club</span>
           </strong>
         </a>
 
+        {/*
         {targetDate && (
           <div
             className="navbar-item"
@@ -52,9 +52,19 @@ export default function Header() {
             <ToggleTime target={targetDate} />
           </div>
         )}
+        */}
 
         <div className="navbar-item" style={{ gap: '0.5rem' }}>
           <p className="is-hidden-mobile">{display}</p>
+          {isAdmin && (
+            <button
+              className={`button is-small ${isAdminMode ? 'is-selected is-danger' : ''}`}
+              onClick={toggleAdminMode}
+              title="Toggle admin mode"
+            >
+              Admin {isAdminMode ? 'ON' : 'OFF'}
+            </button>
+          )}
           <span
             className={`tag is-size-7-mobile is-medium ${
               usedVotes < maxVotes ? 'is-white' : 'is-success'
