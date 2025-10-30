@@ -1,6 +1,7 @@
-import { TMDB_BASE_URL } from '../app/api/tmdb/[...path]/route'
 import type { TmdbCreditsResponse, TmdbMovie, TmdbMovieDetails, TmdbResponse } from '../types/tmdb'
 import { prisma } from './prisma'
+
+export const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 
 export const searchTmdb = async (q: string): Promise<TmdbMovie[]> => {
   if (!q.trim()) return []

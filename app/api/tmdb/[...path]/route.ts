@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-export const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+import { TMDB_BASE_URL } from '../../../../lib/tmdb'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params

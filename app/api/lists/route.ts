@@ -57,7 +57,14 @@ export async function POST(req: NextRequest) {
 
     // hydrate details for new movies
     const ids = Array.from(new Set(list.movies.map((m) => m.tmdbId)))
-    await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
+    const updatedList = await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
+    // map back updated movies
+    list.movies = list.movies.map((m) => {
+      const res = updatedList.find(
+        (r) => r.status === 'fulfilled' && r.value[0]?.tmdbId === m.tmdbId
+      ) as PromiseFulfilledResult<any[]> | undefined
+      return res?.value[0] ?? m
+    })
 
     return NextResponse.json(list, { status: 201 })
   } catch (err: any) {

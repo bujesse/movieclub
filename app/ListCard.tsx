@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MovieListAllWithFlags } from './page'
 import { tmdbImage } from '../lib/tmdb'
-import { GENRES } from '../types/tmdb'
+import { GENRES, TmdbCrew } from '../types/tmdb'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { Eye, EyeClosed, RefreshCw } from 'lucide-react'
+import { formatMinutes } from '../lib/helpers'
 
 export default function ListCard({
   list,
@@ -33,6 +34,10 @@ export default function ListCard({
   const [pending, setPending] = useState(false)
   const [areYouSure, setAreYouSure] = useState(false)
   const wasCreatedByMe = list.createdBy === myEmail
+  const totalRunTime = list.movies.reduce(
+    (acc, m) => acc + (m.runtime && m.runtime > 0 ? m.runtime : 0),
+    0
+  )
 
   // Genres (deduped across movies)
   const genreIds = new Set<number>()
@@ -109,6 +114,7 @@ export default function ListCard({
           <p className="is-size-7 has-text-grey mb-0">
             {formatDistanceToNowStrict(new Date(list.createdAt), { addSuffix: true })}
           </p>
+          {totalRunTime > 0 && <span>{formatMinutes(totalRunTime)}</span>}
         </div>
       </header>
 
@@ -233,9 +239,18 @@ export function MovieList({
                         </span>
                       )}
                     </div>
-                    {m.releaseDate && (
-                      <div className="movie-meta">{new Date(m.releaseDate).getFullYear()}</div>
-                    )}
+                    <div className="movie-meta">
+                      {m.releaseDate && <span>{new Date(m.releaseDate).getFullYear()}</span>}
+                      {m.directors && (m.directors as Array<TmdbCrew>).length > 0 && (
+                        <span> • </span>
+                      )}
+                      {m.directors && (m.directors as Array<TmdbCrew>).length > 0 && (
+                        <span>
+                          {(m.directors as Array<TmdbCrew>).map((d) => d.name).join(', ')}
+                        </span>
+                      )}
+                      {m.runtime && m.runtime > 0 && <div>{formatMinutes(m.runtime)}</div>}
+                    </div>
                   </div>
                 </a>
                 <div

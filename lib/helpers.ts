@@ -37,3 +37,9 @@ export function normalizeMovies(movies: IncomingMovie[]) {
       return Array.isArray(m.genres) ? { ...base, genres: m.genres } : base
     })
 }
+
+export function formatMinutes(mins: number): string {
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return h ? `${h}h ${m}m` : `${m}m`
+}

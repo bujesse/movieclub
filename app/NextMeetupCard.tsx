@@ -63,6 +63,7 @@ export default function NextMeetupCard({
     )
   }
   const list = nextMeetup.movieList!
+  const totalRuntime = list.movies.reduce((sum, m) => sum + (m.runtime ?? 0), 0)
 
   return (
     <div
@@ -86,6 +87,12 @@ export default function NextMeetupCard({
         <div className="has-text-weight-medium mb-3">
           <span className={`chevron ${open ? 'rotated' : ''}`}>▼</span>
           &nbsp;&nbsp;Movies
+          {open && totalRuntime > 0 && (
+            <>
+              {' '}
+              &middot; {Math.floor(totalRuntime / 60)}h {totalRuntime % 60}m
+            </>
+          )}
         </div>
         {open && <MovieList list={list as MovieListAllWithFlags} onToggleSeen={onToggleSeen} />}
       </div>

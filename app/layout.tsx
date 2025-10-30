@@ -16,7 +16,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const id = await getIdentity()
   const me = id
     ? { email: id.email ?? null, name: id.name ?? null, isAdmin: id.isAdmin === true }
-    : null
+    : { email: 'anon', name: 'anon', isAdmin: false }
 
   const { nextMeetup, voteCount } = await loadRootData(me?.email)
 
