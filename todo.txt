@@ -1,42 +1,33 @@
 # Features
-* make an api call on save to get even more data from tmdb 
-    * runtime
-        * display total runtime
-    * popularity
-        * create some sort of "obscurity" score
-    * director
 * archive movie clubs that have happened and create a page for them to see who voted for what
     * List users, show how many times they voted for it
     * All-time votes as well as votes for the meetup it actually won
-* Stats
-    * most desired actors
-    * most popular genres
-    * most popular directors
-    * most popular decades
-    * maybe have a look at letterboxd
+* popularity - create some sort of "obscurity" score
+* add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
+    * show in the typeahead too
+* Add how many upvotes the next meetup list got
 * Request: be able to comment on lists
 * Filters 
     * on just my lists
     * just lists that i've voted on 
         * Click on your votes?
-* Add how many upvotes the next meetup list got
-* Add link to the meetup in discord
-* add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
-    * show in the typeahead too
+* Stats page
+    * most desired actors
+    * most popular genres
+    * most popular directors
+    * most popular decades
+    * maybe have a look at letterboxd
 
 # Post MVP
 * Progress bar for seen for next meetup - need to know how many people are in the club
 * add graveyard for lists that didn't get picked (auto expire after 2 months with 0 votes?)
   * add isArchived flag - remember to filter out archived lists from main page
   * some sort of indicator for list archival coming soon (clock, hourglass, etc)
-* add a gallery for all movies seen in the club
-* Aggregate tmdb popularity and show it on the list card for the most popular lists
+* add a gallery page for all movies seen in the club
 * favicon
     
 
 # Tech Debt
 * add some sort of dev admin ability to edit/delete all lists, edit dates
-* move the media card that's used in the typeahead to a shared component
-* don't clear out form values on modal close if making new list
 * add tests
 * DB backups
