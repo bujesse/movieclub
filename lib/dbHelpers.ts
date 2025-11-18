@@ -50,3 +50,31 @@ export async function getNextMeetupWithoutList(tx: Tx) {
     },
   })
 }
+
+export async function getPastMeetupLists(tx: Tx) {
+  const nowIso = new Date().toISOString()
+  const rows = await tx.$queryRawUnsafe<{ movieListId: number }[]>(
+    `SELECT movieListId
+     FROM "Meetup"
+     WHERE movieListId IS NOT NULL AND datetime(date) < datetime(?)
+     ORDER BY datetime(date) DESC`,
+    nowIso
+  )
+
+  if (rows.length === 0) return []
+
+  const listIds = rows.map((r) => r.movieListId)
+
+  return tx.movieList.findMany({
+    where: {
+      id: {
+        in: listIds,
+      },
+    },
+    include: {
+      movies: true,
+      votes: true,
+      Meetup: true,
+    },
+  })
+}

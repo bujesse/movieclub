@@ -7,7 +7,7 @@ import { GENRES, TmdbCrew } from '../types/tmdb'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
-import { formatDistanceToNowStrict } from 'date-fns'
+import { formatDistanceToNowStrict, format } from 'date-fns'
 import { Eye, EyeClosed, RefreshCw } from 'lucide-react'
 import { formatMinutes } from '../lib/helpers'
 
@@ -16,11 +16,13 @@ export default function ListCard({
   onEdit,
   onDelete,
   onToggleSeen,
+  isArchiveView = false,
 }: {
   list: MovieListAllWithFlags
   onEdit: (id: number) => void
   onDelete: (id: number) => void
   onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
+  isArchiveView?: boolean
 }) {
   const { user } = useCurrentUser()
   const myEmail = user!.email
@@ -112,48 +114,57 @@ export default function ListCard({
         >
           <span className="has-text-weight-medium">{list.createdBy.split('@')[0]}</span>
           <p className="is-size-7 has-text-grey mb-0">
-            {formatDistanceToNowStrict(new Date(list.createdAt), { addSuffix: true })}
+            {isArchiveView
+              ? 'Created: ' + format(new Date(list.createdAt), 'MMM d, yyyy')
+              : formatDistanceToNowStrict(new Date(list.createdAt), { addSuffix: true })}
           </p>
+          {isArchiveView && (list as any).Meetup?.date && (
+            <p className="is-size-7 has-text-info mb-0">
+              Meetup: {format(new Date((list as any).Meetup.date), 'MMM d, yyyy')}
+            </p>
+          )}
           {totalRunTime > 0 && <span>{formatMinutes(totalRunTime)}</span>}
         </div>
       </header>
 
       <MovieList list={list} onToggleSeen={onToggleSeen} />
 
-      <footer className="card-footer">
-        <button
-          className={`card-footer-item button ${hasVoted ? 'is-success is-light' : 'is-light'}`}
-          onClick={handleUpvote}
-          disabled={pending || (!hasVoted && !canVote)}
-          aria-pressed={hasVoted}
-          title={hasVoted ? 'You voted for this' : !canVote ? 'No votes left' : 'Upvote'}
-        >
-          <span className="icon is-small" aria-hidden>
-            <span>{hasVoted ? '▲' : '△'}</span>
-          </span>
-          <span className="ml-2 has-text-weight-semibold">{score}</span>
-          <span className="ml-2 has-text-grey-light">({allTimeScore})</span>
-          {hasVoted && <span className="ml-2 is-size-7 has-text-success">Voted</span>}
-        </button>
-        {wasCreatedByMe && (
-          <>
-            <button
-              className="card-footer-item button has-text-link"
-              onClick={() => onEdit(list.id)}
-              disabled={pending}
-            >
-              Edit
-            </button>
-            <button
-              className="card-footer-item button has-text-danger"
-              onClick={handleDelete}
-              disabled={pending}
-            >
-              {areYouSure ? 'Are you sure?' : 'Delete'}
-            </button>
-          </>
-        )}
-      </footer>
+      {!isArchiveView && (
+        <footer className="card-footer">
+          <button
+            className={`card-footer-item button ${hasVoted ? 'is-success is-light' : 'is-light'}`}
+            onClick={handleUpvote}
+            disabled={pending || (!hasVoted && !canVote)}
+            aria-pressed={hasVoted}
+            title={hasVoted ? 'You voted for this' : !canVote ? 'No votes left' : 'Upvote'}
+          >
+            <span className="icon is-small" aria-hidden>
+              <span>{hasVoted ? '▲' : '△'}</span>
+            </span>
+            <span className="ml-2 has-text-weight-semibold">{score}</span>
+            <span className="ml-2 has-text-grey-light">({allTimeScore})</span>
+            {hasVoted && <span className="ml-2 is-size-7 has-text-success">Voted</span>}
+          </button>
+          {wasCreatedByMe && (
+            <>
+              <button
+                className="card-footer-item button has-text-link"
+                onClick={() => onEdit(list.id)}
+                disabled={pending}
+              >
+                Edit
+              </button>
+              <button
+                className="card-footer-item button has-text-danger"
+                onClick={handleDelete}
+                disabled={pending}
+              >
+                {areYouSure ? 'Are you sure?' : 'Delete'}
+              </button>
+            </>
+          )}
+        </footer>
+      )}
     </div>
   )
 }
