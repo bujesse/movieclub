@@ -1,22 +1,30 @@
 # Features
-* archive movie clubs that have happened and create a page for them to see who voted for what
-    * List users, show how many times they voted for it
-    * All-time votes as well as votes for the meetup it actually won
+
 * popularity - create some sort of "obscurity" score
-* add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
-    * show in the typeahead too
-* Add how many upvotes the next meetup list got
 * Request: be able to comment on lists
 * Filters 
     * on just my lists
     * just lists that i've voted on 
         * Click on your votes?
-* Stats page
+* Sorting
+    * Most and least voted on historically
+    * Most and least seen
+    * by most popular (tmdb)
+    * length of time
+* Click to go to next poster in carousel
+* add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
+    * show in the typeahead too
+* Stats page on the archive page
     * most desired actors
     * most popular genres
     * most popular directors
     * most popular decades
     * maybe have a look at letterboxd
+
+
+# Bugs
+* for some reason, the tmdb data isn't getting saved, but does when i manually refresh it. also, don't wipe out the tmdb stuff on edit if there's existing data, but the new save causes the tmdb data to be wiped out.
+
 
 # Post MVP
 * Progress bar for seen for next meetup - need to know how many people are in the club

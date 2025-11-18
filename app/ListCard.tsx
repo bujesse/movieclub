@@ -127,7 +127,13 @@ export default function ListCard({
         </div>
       </header>
 
-      <MovieList list={list} onToggleSeen={onToggleSeen} />
+      <MovieList
+        list={list}
+        onToggleSeen={onToggleSeen}
+        isArchiveView={isArchiveView}
+        score={score}
+        allTimeScore={allTimeScore}
+      />
 
       {!isArchiveView && (
         <footer className="card-footer">
@@ -172,9 +178,15 @@ export default function ListCard({
 export function MovieList({
   list,
   onToggleSeen,
+  isArchiveView = false,
+  score,
+  allTimeScore,
 }: {
   list: MovieListAllWithFlags
   onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
+  isArchiveView?: boolean
+  score?: number
+  allTimeScore?: number | string
 }) {
   const router = useRouter()
 
@@ -222,6 +234,13 @@ export function MovieList({
         {/* Left: Poster carousel */}
         <div className="column is-full-mobile is-narrow has-text-centered-mobile">
           <PosterCarousel movies={list.movies} intervalMs={5000} />
+          {isArchiveView && score !== undefined && allTimeScore !== undefined && (
+            <div className="mt-3 has-text-centered">
+              <span className="tag is-success" title="Votes received (all-time total)">
+                {score} ({allTimeScore}) {score === 1 ? 'vote' : 'votes'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Right: Details */}

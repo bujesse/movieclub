@@ -64,6 +64,8 @@ export default function NextMeetupCard({
   }
   const list = nextMeetup.movieList!
   const totalRuntime = list.movies.reduce((sum, m) => sum + (m.runtime ?? 0), 0)
+  const score = (list.votes ?? []).reduce((a, v) => a + v.value, 0)
+  const allTimeScore = (list as any).votesTotal ?? 0
 
   return (
     <div
@@ -76,7 +78,14 @@ export default function NextMeetupCard({
           <p className="has-text-grey-light is-uppercase is-size-7 mb-1">
             Next Meetup - {meetupDate}
           </p>
-          <strong className="is-size-5">{list.title}</strong>
+          <div className="is-flex is-align-items-center">
+            <strong className="is-size-5">{list.title}</strong>
+            {open && (
+              <span className="tag is-success ml-3" title="Votes received (all-time total)">
+                {score} ({allTimeScore}) {score === 1 ? 'vote' : 'votes'}
+              </span>
+            )}
+          </div>
         </div>
         <div className="right">
           {/* <span className={`chevron ${open ? 'rotated' : ''}`}>▼</span> */}
