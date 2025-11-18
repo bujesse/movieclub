@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
 import { format, formatDistanceToNowStrict } from 'date-fns'
@@ -9,9 +9,13 @@ import { useNextMeetup } from './NextMeetupContext'
 export default function Header() {
   const { usedVotes, maxVotes } = useVotes()
   const { nextMeetup } = useNextMeetup()
+  const navbarRef = useRef<HTMLElement>(null)
   const nextMeetupIso = nextMeetup?.date?.toISOString() ?? null
   const { user, isAdmin, isAdminMode, toggleAdminMode } = useCurrentUser()
-  const display = user.email ? user.email.split('@')[0] : null
+  const display = user?.email ? user.email.split('@')[0] : null
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const toggleMenu = () => setIsMenuOpen((v) => !v)
 
   const targetDate = useMemo(() => {
     if (nextMeetupIso) {
@@ -21,50 +25,48 @@ export default function Header() {
     return null
   }, [nextMeetupIso])
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!isMenuOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (navbarRef.current && !navbarRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isMenuOpen])
+
   return (
     <nav
+      ref={navbarRef}
       className="navbar is-fixed-top is-spaced is-dark"
       role="navigation"
       aria-label="main navigation"
     >
-      <div
-        className="navbar-brand custom-navbar"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: '100%',
-          flex: '1 1 auto',
-        }}
-      >
+      {/* BRAND: logo + mobile votes + burger (same flex row) */}
+      <div className="navbar-brand">
         <a className="navbar-item" href="/">
           <strong>
             🎬 <span>Movie Club</span>
           </strong>
         </a>
 
-        {/*
-        {targetDate && (
-          <div
-            className="navbar-item"
-            style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}
-          >
-            <ToggleTime target={targetDate} />
-          </div>
-        )}
-        */}
-
-        <div className="navbar-item" style={{ gap: '0.5rem' }}>
-          <p className="is-hidden-mobile">{display}</p>
-          {isAdmin && (
-            <button
-              className={`button is-small ${isAdminMode ? 'is-selected is-danger' : ''}`}
-              onClick={toggleAdminMode}
-              title="Toggle admin mode"
-            >
-              Admin {isAdminMode ? 'ON' : 'OFF'}
-            </button>
-          )}
+        {/* mobile votes + burger */}
+        <div
+          className="is-hidden-desktop"
+          style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            paddingRight: '0.5rem',
+          }}
+        >
           <span
             className={`tag is-size-7-mobile is-medium ${
               usedVotes < maxVotes ? 'is-white' : 'is-success'
@@ -75,6 +77,67 @@ export default function Header() {
               {usedVotes}/{maxVotes}
             </span>
           </span>
+
+          <a
+            role="button"
+            className={`navbar-burger ${isMenuOpen ? 'is-active' : ''}`}
+            aria-label="menu"
+            aria-expanded={isMenuOpen}
+            data-target="main-navbar-menu"
+            onClick={toggleMenu}
+            style={{ paddingLeft: '0.5rem', paddingRight: '0.5rem' }}
+          >
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+          </a>
+        </div>
+      </div>
+
+      <div id="main-navbar-menu" className={`navbar-menu ${isMenuOpen ? 'is-active' : ''}`}>
+        <div className="navbar-start">
+          <a className="navbar-item" href="/">
+            Lists
+          </a>
+          <a className="navbar-item" href="/archive">
+            Archive
+          </a>
+        </div>
+
+        <div className="navbar-end">
+          <div
+            className="navbar-item"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+            }}
+          >
+            {/* username as non-link tag */}
+            {display && <span className="tag is-small">Logged in: {display}</span>}
+
+            {/* admin toggle */}
+            {isAdmin && (
+              <button
+                className={`tag is-small ${isAdminMode ? 'is-danger is-selected' : ''}`}
+                onClick={toggleAdminMode}
+                title="Toggle admin mode"
+              >
+                Admin {isAdminMode ? 'ON' : 'OFF'}
+              </button>
+            )}
+
+            {/* desktop votes */}
+            <span
+              className={`tag is-hidden-touch is-medium ${usedVotes < maxVotes ? 'is-white' : 'is-success'}`}
+            >
+              Votes:&nbsp;
+              <span className="has-text-weight-semibold">
+                {usedVotes}/{maxVotes}
+              </span>
+            </span>
+          </div>
         </div>
       </div>
     </nav>
@@ -85,14 +148,13 @@ function ToggleTime({ target }: { target: Date }) {
   const [showAbsolute, setShowAbsolute] = useState(false)
   const [, setNow] = useState(Date.now())
 
-  // Tick — use 1000 for second-level, 60000 for minute-level updates
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
 
-  const rel = formatDistanceToNowStrict(target, { addSuffix: true }) // e.g., "in 2 hours"
-  const abs = format(target, 'EEE, MMM d, h:mm a') // e.g., "Tue, Sep 2, 7:30 PM"
+  const rel = formatDistanceToNowStrict(target, { addSuffix: true })
+  const abs = format(target, 'EEE, MMM d, h:mm a')
 
   return (
     <span
