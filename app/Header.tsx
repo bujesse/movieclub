@@ -1,29 +1,26 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
-import { format, formatDistanceToNowStrict } from 'date-fns'
-import { useNextMeetup } from './NextMeetupContext'
+import FilterSortControls from './FilterSortControls'
+import { usePathname } from 'next/navigation'
+import { useListsPage } from './ListsPageContext'
 
 export default function Header() {
   const { usedVotes, maxVotes } = useVotes()
-  const { nextMeetup } = useNextMeetup()
   const navbarRef = useRef<HTMLElement>(null)
-  const nextMeetupIso = nextMeetup?.date?.toISOString() ?? null
   const { user, isAdmin, isAdminMode, toggleAdminMode } = useCurrentUser()
   const display = user?.email ? user.email.split('@')[0] : null
+
+  const pathname = usePathname()
+  const { filter, sortBy, setFilter, setSortBy } = useListsPage()
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const toggleMenu = () => setIsMenuOpen((v) => !v)
 
-  const targetDate = useMemo(() => {
-    if (nextMeetupIso) {
-      const d = new Date(nextMeetupIso)
-      if (!Number.isNaN(d.getTime())) return d
-    }
-    return null
-  }, [nextMeetupIso])
+  // Only show controls on home page
+  const isHomePage = pathname === '/'
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -103,6 +100,18 @@ export default function Header() {
           <a className="navbar-item" href="/archive">
             Archive
           </a>
+
+          {/* Filter/Sort Controls - Desktop only, on lists page */}
+          {isHomePage && (
+            <div className="navbar-item is-hidden-touch">
+              <FilterSortControls
+                filter={filter}
+                sortBy={sortBy}
+                onFilterChangeAction={setFilter}
+                onSortChangeAction={setSortBy}
+              />
+            </div>
+          )}
         </div>
 
         <div className="navbar-end">
@@ -141,35 +150,5 @@ export default function Header() {
         </div>
       </div>
     </nav>
-  )
-}
-
-function ToggleTime({ target }: { target: Date }) {
-  const [showAbsolute, setShowAbsolute] = useState(false)
-  const [, setNow] = useState(Date.now())
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [])
-
-  const rel = formatDistanceToNowStrict(target, { addSuffix: true })
-  const abs = format(target, 'EEE, MMM d, h:mm a')
-
-  return (
-    <span
-      role="button"
-      tabIndex={0}
-      onClick={() => setShowAbsolute((s) => !s)}
-      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setShowAbsolute((s) => !s)}
-      className="is-size-7-mobile tag is-info is-medium"
-      style={{ cursor: 'pointer', userSelect: 'none' }}
-      aria-pressed={showAbsolute}
-      suppressHydrationWarning
-      title="Click to toggle time display"
-    >
-      <span>Next meetup:&nbsp;</span>
-      <span className="has-text-weight-semibold">{showAbsolute ? abs : rel}</span>
-    </span>
   )
 }

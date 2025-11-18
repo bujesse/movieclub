@@ -81,10 +81,10 @@ export default function ArchivePage() {
             {lists.map((l) => (
               <div key={l.id} className="cell">
                 <ListCard
-                  onToggleSeen={onToggleSeen}
+                  onToggleSeenAction={onToggleSeen}
                   list={l}
-                  onDelete={() => {}}
-                  onEdit={() => {}}
+                  onDeleteAction={() => {}}
+                  onEditAction={() => {}}
                   isArchiveView={true}
                 />
               </div>

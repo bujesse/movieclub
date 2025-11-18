@@ -5,6 +5,7 @@ import { getIdentity } from '../lib/cfAccess'
 import CurrentUserProvider from './CurrentUserProvider'
 import { VotesProvider } from './VotesProvider'
 import { NextMeetupProvider } from './NextMeetupContext'
+import { ListsPageProvider } from './ListsPageContext'
 import { loadRootData } from '../lib/loadRootData'
 
 export const metadata = {
@@ -32,12 +33,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <CurrentUserProvider user={me}>
           <VotesProvider initialUsed={voteCount}>
             <NextMeetupProvider nextMeetup={nextMeetup}>
-              <Header />
+              <ListsPageProvider>
+                <Header />
 
-              {/* Main Content */}
-              <main className="container" style={{ minHeight: '75vh' }}>
-                {children}
-              </main>
+                {/* Main Content */}
+                <main className="container" style={{ minHeight: '75vh' }}>
+                  {children}
+                </main>
+              </ListsPageProvider>
             </NextMeetupProvider>
           </VotesProvider>
         </CurrentUserProvider>

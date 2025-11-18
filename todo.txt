@@ -2,15 +2,6 @@
 
 * popularity - create some sort of "obscurity" score
 * Request: be able to comment on lists
-* Filters 
-    * on just my lists
-    * just lists that i've voted on 
-        * Click on your votes?
-* Sorting
-    * Most and least voted on historically
-    * Most and least seen
-    * by most popular (tmdb)
-    * length of time
 * Click to go to next poster in carousel
 * add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
     * show in the typeahead too

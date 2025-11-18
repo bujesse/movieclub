@@ -1,11 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import ListModal from './ListModal'
 import ListCard from './ListCard'
 import { Prisma } from '@prisma/client'
 import { useRouter } from 'next/navigation'
 import NextMeetupCard from './NextMeetupCard'
+import { useCurrentUser } from './CurrentUserProvider'
+import FilterSortControls from './FilterSortControls'
+import { useListsPage } from './ListsPageContext'
+import { ListFilter, ListSort } from '../types/lists'
 
 export type MovieListAll = Prisma.MovieListGetPayload<{
   include: {
@@ -15,7 +19,7 @@ export type MovieListAll = Prisma.MovieListGetPayload<{
 }>
 
 export type MovieListAllWithFlags = Omit<MovieListAll, 'movies'> & {
-  votesTotal: string[]
+  votesTotal: number
   movies: (MovieListAll['movies'][number] & {
     inMultipleLists: boolean
     listCount: number
@@ -61,6 +65,8 @@ export default function HomePage() {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
 
   const router = useRouter()
+  const { user } = useCurrentUser()
+  const { filter, sortBy, setFilter, setSortBy } = useListsPage()
 
   useEffect(() => {
     const fetchLists = async () => {
@@ -149,9 +155,95 @@ export default function HomePage() {
     )
   }
 
+  const onVoteChange = (listId: number, hasVoted: boolean, allTimeScore: number) => {
+    setLists((prev) =>
+      prev.map((l) => {
+        if (l.id !== listId) return l
+
+        // Update votes array based on hasVoted state
+        const updatedVotes = hasVoted
+          ? [...l.votes, { userId: user!.email, value: 1 } as any]
+          : l.votes.filter((v) => v.userId !== user?.email)
+
+        return {
+          ...l,
+          votes: updatedVotes,
+          votesTotal: allTimeScore,
+        }
+      })
+    )
+  }
+
+  // Filter and sort lists
+  const filteredAndSortedLists = useMemo(() => {
+    let result = [...lists]
+
+    // Apply filter
+    if (filter === ListFilter.MyLists) {
+      result = result.filter((l) => l.createdBy === user?.email)
+    } else if (filter === ListFilter.Voted) {
+      result = result.filter((l) => l.votes.some((v) => v.userId === user?.email))
+    }
+
+    // Apply sort
+    if (sortBy === ListSort.VotesDesc) {
+      result.sort((a, b) => {
+        return (b.votesTotal ?? 0) - (a.votesTotal ?? 0)
+      })
+    } else if (sortBy === ListSort.MostSeen) {
+      result.sort((a, b) => {
+        // Primary: Most seen (desc)
+        const avgSeenA = a.movies.reduce((sum, m) => sum + m.seenCount, 0) / a.movies.length
+        const avgSeenB = b.movies.reduce((sum, m) => sum + m.seenCount, 0) / b.movies.length
+        if (avgSeenB !== avgSeenA) return avgSeenB - avgSeenA
+
+        // Secondary: Current votes (desc)
+        const curVotesA = a.votes?.length ?? 0
+        const curVotesB = b.votes?.length ?? 0
+        if (curVotesB !== curVotesA) return curVotesB - curVotesA
+
+        // Tertiary: All-time votes (desc)
+        if ((b.votesTotal ?? 0) !== (a.votesTotal ?? 0))
+          return (b.votesTotal ?? 0) - (a.votesTotal ?? 0)
+
+        // Quaternary: Oldest first (asc)
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      })
+    } else if (sortBy === ListSort.LeastSeen) {
+      result.sort((a, b) => {
+        // Primary: Least seen (asc)
+        const avgSeenA = a.movies.reduce((sum, m) => sum + m.seenCount, 0) / a.movies.length
+        const avgSeenB = b.movies.reduce((sum, m) => sum + m.seenCount, 0) / b.movies.length
+        if (avgSeenA !== avgSeenB) return avgSeenA - avgSeenB
+
+        // Secondary: Current votes (desc)
+        const curVotesA = a.votes?.length ?? 0
+        const curVotesB = b.votes?.length ?? 0
+        if (curVotesB !== curVotesA) return curVotesB - curVotesA
+
+        // Tertiary: All-time votes (desc)
+        if ((b.votesTotal ?? 0) !== (a.votesTotal ?? 0))
+          return (b.votesTotal ?? 0) - (a.votesTotal ?? 0)
+
+        // Quaternary: Oldest first (asc)
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      })
+    } else if (sortBy === ListSort.CreatedDesc) {
+      result.sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      })
+    } else if (sortBy === ListSort.CreatedAsc) {
+      result.sort((a, b) => {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      })
+    }
+
+    return result
+  }, [lists, filter, sortBy, user?.email])
+
   return (
     <section className="section">
-      <NextMeetupCard onToggleSeen={onToggleSeen} />
+      <NextMeetupCard onToggleSeenAction={onToggleSeen} />
 
       <div className="container has-text-centered mb-5">
         <h2 className="title">Movie Lists</h2>
@@ -160,18 +252,35 @@ export default function HomePage() {
         </button>
       </div>
 
+      {/* Mobile Bottom Nav (Sticky) */}
+      <div className="navbar is-dark is-fixed-bottom is-hidden-desktop">
+        <div className="is-flex is-justify-content-center" style={{ padding: '0.75rem' }}>
+          <FilterSortControls
+            filter={filter}
+            sortBy={sortBy}
+            onFilterChangeAction={setFilter}
+            onSortChangeAction={setSortBy}
+            variant="compact"
+          />
+        </div>
+      </div>
+
       {loading ? (
         <p>Loading lists...</p>
       ) : (
-        <div className="fixed-grid has-1-cols-mobile	has-2-cols-tablet has-3-cols-widescreen">
+        <div
+          className="fixed-grid has-1-cols-mobile	has-2-cols-tablet has-3-cols-widescreen"
+          style={{ paddingBottom: '5rem' }}
+        >
           <div className="grid is-row-gap-5 is-column-gap-4 is-multiline">
-            {lists.map((l) => (
+            {filteredAndSortedLists.map((l) => (
               <div key={l.id} className="cell">
                 <ListCard
-                  onToggleSeen={onToggleSeen}
+                  onToggleSeenAction={onToggleSeen}
                   list={l}
-                  onDelete={handleDeleteList}
-                  onEdit={handleEditList}
+                  onDeleteAction={handleDeleteList}
+                  onEditAction={handleEditList}
+                  onVoteChangeAction={onVoteChange}
                 />
               </div>
             ))}

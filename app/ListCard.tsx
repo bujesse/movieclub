@@ -13,16 +13,18 @@ import { formatMinutes } from '../lib/helpers'
 
 export default function ListCard({
   list,
-  onEdit,
-  onDelete,
-  onToggleSeen,
+  onEditAction,
+  onDeleteAction,
+  onToggleSeenAction,
   isArchiveView = false,
+  onVoteChangeAction,
 }: {
   list: MovieListAllWithFlags
-  onEdit: (id: number) => void
-  onDelete: (id: number) => void
-  onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
+  onEditAction: (id: number) => void
+  onDeleteAction: (id: number) => void
+  onToggleSeenAction: (tmdbId: number, hasSeen: boolean) => void
   isArchiveView?: boolean
+  onVoteChangeAction?: (listId: number, hasVoted: boolean, allTimeScore: number) => void
 }) {
   const { user } = useCurrentUser()
   const myEmail = user!.email
@@ -63,6 +65,8 @@ export default function ListCard({
         setScore(data.score)
         setAllTimeScore(data.allTimeScore)
       }
+      // Notify parent component of vote change
+      onVoteChangeAction?.(list.id, data.hasVoted, data.allTimeScore)
       router.refresh()
     } finally {
       setPending(false)
@@ -84,7 +88,7 @@ export default function ListCard({
         return
       }
       if (!res.ok) return
-      onDelete(list.id)
+      onDeleteAction(list.id)
       router.refresh()
     } finally {
       setPending(false)
@@ -129,7 +133,7 @@ export default function ListCard({
 
       <MovieList
         list={list}
-        onToggleSeen={onToggleSeen}
+        onToggleSeenAction={onToggleSeenAction}
         isArchiveView={isArchiveView}
         score={score}
         allTimeScore={allTimeScore}
@@ -155,7 +159,7 @@ export default function ListCard({
             <>
               <button
                 className="card-footer-item button has-text-link"
-                onClick={() => onEdit(list.id)}
+                onClick={() => onEditAction(list.id)}
                 disabled={pending}
               >
                 Edit
@@ -177,13 +181,13 @@ export default function ListCard({
 
 export function MovieList({
   list,
-  onToggleSeen,
+  onToggleSeenAction,
   isArchiveView = false,
   score,
   allTimeScore,
 }: {
   list: MovieListAllWithFlags
-  onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
+  onToggleSeenAction: (tmdbId: number, hasSeen: boolean) => void
   isArchiveView?: boolean
   score?: number
   allTimeScore?: number | string
@@ -211,7 +215,7 @@ export function MovieList({
     e.preventDefault()
     e.stopPropagation()
     await fetch(`/api/movies/${tmdbId}/seen`, { method: hasSeen ? 'DELETE' : 'POST' })
-    onToggleSeen && onToggleSeen(tmdbId, hasSeen)
+    onToggleSeenAction && onToggleSeenAction(tmdbId, hasSeen)
     router.refresh()
   }
 

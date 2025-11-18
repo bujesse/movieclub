@@ -8,9 +8,9 @@ import { MovieListAllWithFlags } from './page'
 import { useCurrentUser } from './CurrentUserProvider'
 
 export default function NextMeetupCard({
-  onToggleSeen,
+  onToggleSeenAction,
 }: {
-  onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
+  onToggleSeenAction: (tmdbId: number, hasSeen: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
   const { isAdmin } = useCurrentUser()
@@ -103,7 +103,9 @@ export default function NextMeetupCard({
             </>
           )}
         </div>
-        {open && <MovieList list={list as MovieListAllWithFlags} onToggleSeen={onToggleSeen} />}
+        {open && (
+          <MovieList list={list as MovieListAllWithFlags} onToggleSeenAction={onToggleSeenAction} />
+        )}
       </div>
       <style jsx>{`
         .chevron {
