@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
 import FilterSortControls from './FilterSortControls'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useListsPage } from './ListsPageContext'
+import { ListFilter } from '../types/lists'
 
 export default function Header() {
   const { usedVotes, maxVotes } = useVotes()
@@ -14,6 +15,7 @@ export default function Header() {
   const display = user?.email ? user.email.split('@')[0] : null
 
   const pathname = usePathname()
+  const router = useRouter()
   const { filter, sortBy, setFilter, setSortBy } = useListsPage()
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -21,6 +23,13 @@ export default function Header() {
 
   // Only show controls on home page
   const isHomePage = pathname === '/'
+
+  const handleVotesBadgeClick = () => {
+    if (!isHomePage) {
+      router.push('/')
+    }
+    setFilter(ListFilter.Voted)
+  }
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -68,6 +77,9 @@ export default function Header() {
             className={`tag is-size-7-mobile is-medium ${
               usedVotes < maxVotes ? 'is-white' : 'is-success'
             }`}
+            onClick={handleVotesBadgeClick}
+            style={{ cursor: 'pointer' }}
+            title="Click to see your voted lists"
           >
             Votes:&nbsp;
             <span className="has-text-weight-semibold">
@@ -140,6 +152,9 @@ export default function Header() {
             {/* desktop votes */}
             <span
               className={`tag is-hidden-touch is-medium ${usedVotes < maxVotes ? 'is-white' : 'is-success'}`}
+              onClick={handleVotesBadgeClick}
+              style={{ cursor: 'pointer' }}
+              title="Click to see your voted lists"
             >
               Votes:&nbsp;
               <span className="has-text-weight-semibold">
