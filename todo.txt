@@ -5,7 +5,7 @@
 * Click to go to next poster in carousel
 * add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
     * show in the typeahead too
-* Stats page on the archive page
+* Stats on the archive page, or a separate stats page
     * most desired actors
     * most popular genres
     * most popular directors

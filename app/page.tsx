@@ -86,6 +86,11 @@ export default function HomePage() {
     fetchLists()
   }, [])
 
+  // Scroll to top when filter or sort changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [filter, sortBy])
+
   const handleCreateNewList = () => {
     setInitialList(undefined)
     setModalMode('create')
@@ -254,7 +259,13 @@ export default function HomePage() {
 
       {/* Mobile Bottom Nav (Sticky) */}
       <div className="navbar is-dark is-fixed-bottom is-hidden-desktop">
-        <div className="is-flex is-justify-content-center" style={{ padding: '0.75rem' }}>
+        <div
+          className="is-flex is-justify-content-center"
+          style={{
+            padding: '0.75rem',
+            paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)',
+          }}
+        >
           <FilterSortControls
             filter={filter}
             sortBy={sortBy}
