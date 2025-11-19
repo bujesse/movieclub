@@ -89,7 +89,7 @@ export default function Header() {
 
           <a
             role="button"
-            className={`navbar-burger ${isMenuOpen ? 'is-active' : ''}`}
+            className={`navbar-burger has-text-grey-lighter ${isMenuOpen ? 'is-active' : ''}`}
             aria-label="menu"
             aria-expanded={isMenuOpen}
             data-target="main-navbar-menu"

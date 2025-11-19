@@ -20,6 +20,7 @@ export type MovieListAll = Prisma.MovieListGetPayload<{
 
 export type MovieListAllWithFlags = Omit<MovieListAll, 'movies'> & {
   votesTotal: number
+  commentCount: number
   movies: (MovieListAll['movies'][number] & {
     inMultipleLists: boolean
     listCount: number
@@ -292,6 +293,7 @@ export default function HomePage() {
                   onDeleteAction={handleDeleteList}
                   onEditAction={handleEditList}
                   onVoteChangeAction={onVoteChange}
+                  initialCommentCount={l.commentCount}
                 />
               </div>
             ))}

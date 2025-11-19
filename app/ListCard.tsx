@@ -8,8 +8,9 @@ import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
 import { formatDistanceToNowStrict, format } from 'date-fns'
-import { Eye, EyeClosed, RefreshCw } from 'lucide-react'
+import { Eye, EyeClosed, RefreshCw, MessageCircle } from 'lucide-react'
 import { formatMinutes } from '../lib/helpers'
+import CommentModal from './CommentModal'
 
 export default function ListCard({
   list,
@@ -18,6 +19,7 @@ export default function ListCard({
   onToggleSeenAction,
   isArchiveView = false,
   onVoteChangeAction,
+  initialCommentCount = 0,
 }: {
   list: MovieListAllWithFlags
   onEditAction: (id: number) => void
@@ -25,6 +27,7 @@ export default function ListCard({
   onToggleSeenAction: (tmdbId: number, hasSeen: boolean) => void
   isArchiveView?: boolean
   onVoteChangeAction?: (listId: number, hasVoted: boolean, allTimeScore: number) => void
+  initialCommentCount?: number
 }) {
   const { user } = useCurrentUser()
   const myEmail = user!.email
@@ -37,6 +40,8 @@ export default function ListCard({
   const [hasVoted, setHasVoted] = useState(list.votes.some((v) => v.userId === myEmail))
   const [pending, setPending] = useState(false)
   const [areYouSure, setAreYouSure] = useState(false)
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false)
+  const [commentCount, setCommentCount] = useState(initialCommentCount)
   const wasCreatedByMe = list.createdBy === myEmail
   const totalRunTime = list.movies.reduce(
     (acc, m) => acc + (m.runtime && m.runtime > 0 ? m.runtime : 0),
@@ -139,42 +144,68 @@ export default function ListCard({
         allTimeScore={allTimeScore}
       />
 
-      {!isArchiveView && (
-        <footer className="card-footer">
-          <button
-            className={`card-footer-item button ${hasVoted ? 'is-success is-light' : 'is-light'}`}
-            onClick={handleUpvote}
-            disabled={pending || (!hasVoted && !canVote)}
-            aria-pressed={hasVoted}
-            title={hasVoted ? 'You voted for this' : !canVote ? 'No votes left' : 'Upvote'}
-          >
-            <span className="icon is-small" aria-hidden>
-              <span>{hasVoted ? '▲' : '△'}</span>
-            </span>
-            <span className="ml-2 has-text-weight-semibold">{score}</span>
-            <span className="ml-2 has-text-grey-light">({allTimeScore})</span>
-            {hasVoted && <span className="ml-2 is-size-7 has-text-success">Voted</span>}
-          </button>
-          {wasCreatedByMe && (
-            <>
-              <button
-                className="card-footer-item button has-text-link"
-                onClick={() => onEditAction(list.id)}
-                disabled={pending}
-              >
-                Edit
-              </button>
-              <button
-                className="card-footer-item button has-text-danger"
-                onClick={handleDelete}
-                disabled={pending}
-              >
-                {areYouSure ? 'Are you sure?' : 'Delete'}
-              </button>
-            </>
-          )}
-        </footer>
-      )}
+      <footer className="card-footer">
+        {!isArchiveView && (
+          <>
+            <button
+              className={`card-footer-item button ${hasVoted ? 'is-success is-light' : 'is-light'}`}
+              onClick={handleUpvote}
+              disabled={pending || (!hasVoted && !canVote)}
+              aria-pressed={hasVoted}
+              title={hasVoted ? 'You voted for this' : !canVote ? 'No votes left' : 'Upvote'}
+            >
+              <span className="icon is-small" aria-hidden>
+                <span>{hasVoted ? '▲' : '△'}</span>
+              </span>
+              <span className="ml-2 has-text-weight-semibold">{score}</span>
+              <span className="ml-2 has-text-grey-light">({allTimeScore})</span>
+              {hasVoted && <span className="ml-2 is-size-7 has-text-success">Voted</span>}
+            </button>
+          </>
+        )}
+        <button
+          className="card-footer-item button is-light"
+          onClick={() => setIsCommentModalOpen(true)}
+          title="Comments"
+        >
+          <span className="icon is-small">
+            <MessageCircle size={16} />
+          </span>
+          <span className="ml-2">{commentCount}</span>
+        </button>
+        {!isArchiveView && wasCreatedByMe && (
+          <>
+            <button
+              className="card-footer-item button has-text-link"
+              onClick={() => onEditAction(list.id)}
+              disabled={pending}
+            >
+              Edit
+            </button>
+            <button
+              className="card-footer-item button has-text-danger"
+              onClick={handleDelete}
+              disabled={pending}
+            >
+              {areYouSure ? 'Are you sure?' : 'Delete'}
+            </button>
+          </>
+        )}
+      </footer>
+
+      <CommentModal
+        isOpen={isCommentModalOpen}
+        listId={list.id}
+        listTitle={list.title}
+        onClose={() => {
+          setIsCommentModalOpen(false)
+          // Refresh comment count when modal closes
+          fetch(`/api/lists/${list.id}/comments`)
+            .then((res) => res.json())
+            .then((comments) => setCommentCount(comments.length))
+            .catch(console.error)
+        }}
+      />
     </div>
   )
 }

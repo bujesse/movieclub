@@ -32,9 +32,20 @@ export async function enrichLists<
   })
   const votesTotalMap = new Map<number, number>(voteAgg.map((r) => [r.movieListId, r._count._all]))
 
+  // Aggregate comment counts for all lists
+  const commentAgg = await prisma.comment.groupBy({
+    by: ['movieListId'],
+    where: { movieListId: { in: listIds } },
+    _count: { _all: true },
+  })
+  const commentCountMap = new Map<number, number>(
+    commentAgg.map((r) => [r.movieListId, r._count._all])
+  )
+
   return lists.map((l) => ({
     ...l,
     votesTotal: votesTotalMap.get(l.id) ?? 0,
+    commentCount: commentCountMap.get(l.id) ?? 0,
     movies: l.movies.map((m) => {
       const seenBy = seenByMap.get(m.tmdbId) ?? []
       return {

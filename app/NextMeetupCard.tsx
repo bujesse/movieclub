@@ -6,6 +6,8 @@ import { format, formatDistanceToNowStrict } from 'date-fns'
 import { MovieList } from './ListCard'
 import { MovieListAllWithFlags } from './page'
 import { useCurrentUser } from './CurrentUserProvider'
+import { MessageCircle } from 'lucide-react'
+import CommentModal from './CommentModal'
 
 export default function NextMeetupCard({
   onToggleSeenAction,
@@ -13,6 +15,8 @@ export default function NextMeetupCard({
   onToggleSeenAction: (tmdbId: number, hasSeen: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false)
+  const [commentCount, setCommentCount] = useState(0)
   const { isAdmin } = useCurrentUser()
 
   const { nextMeetup, pollsCloseAt } = useNextMeetup()
@@ -66,6 +70,12 @@ export default function NextMeetupCard({
   const totalRuntime = list.movies.reduce((sum, m) => sum + (m.runtime ?? 0), 0)
   const score = (list.votes ?? []).reduce((a, v) => a + v.value, 0)
   const allTimeScore = (list as any).votesTotal ?? 0
+  const initialCommentCount = (list as any).commentCount ?? 0
+
+  // Initialize comment count if not set
+  if (commentCount === 0 && initialCommentCount > 0) {
+    setCommentCount(initialCommentCount)
+  }
 
   return (
     <div
@@ -88,7 +98,19 @@ export default function NextMeetupCard({
           </div>
         </div>
         <div className="right">
-          {/* <span className={`chevron ${open ? 'rotated' : ''}`}>▼</span> */}
+          <button
+            className="button is-small is-light"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsCommentModalOpen(true)
+            }}
+            title="Comments"
+          >
+            <span className="icon is-small">
+              <MessageCircle size={16} />
+            </span>
+            <span className="ml-2">{commentCount}</span>
+          </button>
         </div>
       </div>
 
@@ -117,6 +139,20 @@ export default function NextMeetupCard({
           transform: rotate(0deg); /* open → down */
         }
       `}</style>
+
+      <CommentModal
+        isOpen={isCommentModalOpen}
+        listId={list.id}
+        listTitle={list.title}
+        onClose={() => {
+          setIsCommentModalOpen(false)
+          // Refresh comment count when modal closes
+          fetch(`/api/lists/${list.id}/comments`)
+            .then((res) => res.json())
+            .then((comments) => setCommentCount(comments.length))
+            .catch(console.error)
+        }}
+      />
     </div>
   )
 }

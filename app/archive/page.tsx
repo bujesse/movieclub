@@ -86,6 +86,7 @@ export default function ArchivePage() {
                   onDeleteAction={() => {}}
                   onEditAction={() => {}}
                   isArchiveView={true}
+                  initialCommentCount={l.commentCount}
                 />
               </div>
             ))}
