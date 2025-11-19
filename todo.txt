@@ -2,7 +2,6 @@
 
 * popularity - create some sort of "obscurity" score
 * Request: be able to comment on lists
-* Click to go to next poster in carousel
 * add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
     * show in the typeahead too
 * Stats on the archive page, or a separate stats page

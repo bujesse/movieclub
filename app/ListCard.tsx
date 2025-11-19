@@ -420,9 +420,29 @@ function PosterCarousel({
     }
   }, [posters.length, intervalMs])
 
+  const handleClick = () => {
+    if (posters.length <= 1) return
+
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current)
+    }
+
+    setIdx((i) => (i + 1) % posters.length)
+
+    timerRef.current = window.setInterval(() => {
+      setIdx((i) => (i + 1) % posters.length)
+    }, intervalMs)
+  }
+
   // Own aspect ratio: 2:3 via padding-bottom trick.
   return (
-    <div className="poster-carousel" aria-live="polite">
+    <div
+      className="poster-carousel"
+      aria-live="polite"
+      onClick={handleClick}
+      style={{ cursor: posters.length > 1 ? 'pointer' : 'default' }}
+      title={posters.length > 1 ? 'Click to see next poster' : undefined}
+    >
       {posters.map((p, i) => {
         const active = i === idx
         return (
