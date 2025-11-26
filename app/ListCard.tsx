@@ -12,23 +12,32 @@ import { Eye, EyeClosed, RefreshCw, MessageCircle } from 'lucide-react'
 import { formatMinutes } from '../lib/helpers'
 import CommentModal from './CommentModal'
 
-export default function ListCard({
-  list,
-  onEditAction,
-  onDeleteAction,
-  onToggleSeenAction,
-  isArchiveView = false,
-  onVoteChangeAction,
-  initialCommentCount = 0,
-}: {
+type ListCardProps = {
   list: MovieListAllWithFlags
-  onEditAction: (id: number) => void
-  onDeleteAction: (id: number) => void
-  onToggleSeenAction: (tmdbId: number, hasSeen: boolean) => void
-  isArchiveView?: boolean
-  onVoteChangeAction?: (listId: number, hasVoted: boolean, allTimeScore: number) => void
-  initialCommentCount?: number
-}) {
+  actions: {
+    onEdit: (id: number) => void
+    onDelete: (id: number) => void
+    onToggleSeen: (tmdbId: number, hasSeen: boolean) => void
+  }
+  display?: {
+    isArchiveView?: boolean
+    showNominatedBy?: boolean
+    initialCommentCount?: number
+  }
+  voting?: {
+    onVoteChange: (listId: number, hasVoted: boolean, allTimeScore: number) => void
+  }
+  nomination?: {
+    hasNominated: boolean
+    onNominate: (listId: number) => void
+    isConfirming: boolean
+  }
+}
+
+export default function ListCard({ list, actions, display, voting, nomination }: ListCardProps) {
+  const isArchiveView = display?.isArchiveView ?? false
+  const showNominatedBy = display?.showNominatedBy ?? false
+  const initialCommentCount = display?.initialCommentCount ?? 0
   const { user } = useCurrentUser()
   const myEmail = user!.email
   const { canVote } = useVotes()
@@ -71,7 +80,7 @@ export default function ListCard({
         setAllTimeScore(data.allTimeScore)
       }
       // Notify parent component of vote change
-      onVoteChangeAction?.(list.id, data.hasVoted, data.allTimeScore)
+      voting?.onVoteChange?.(list.id, data.hasVoted, data.allTimeScore)
       router.refresh()
     } finally {
       setPending(false)
@@ -93,7 +102,7 @@ export default function ListCard({
         return
       }
       if (!res.ok) return
-      onDeleteAction(list.id)
+      actions.onDelete(list.id)
       router.refresh()
     } finally {
       setPending(false)
@@ -121,12 +130,37 @@ export default function ListCard({
             minWidth: '115px',
           }}
         >
-          <span className="has-text-weight-medium">{list.createdBy.split('@')[0]}</span>
+          <span
+            className={`has-text-weight-medium ${
+              showNominatedBy &&
+              (list as any).nominations?.some((n: any) => n.userId === list.createdBy)
+                ? 'has-text-warning'
+                : ''
+            }`}
+          >
+            {showNominatedBy &&
+            (list as any).nominations?.some((n: any) => n.userId === list.createdBy)
+              ? '★ '
+              : ''}
+            {list.createdBy.split('@')[0]}
+          </span>
           <p className="is-size-7 has-text-grey mb-0">
             {isArchiveView
               ? 'Created: ' + format(new Date(list.createdAt), 'MMM d, yyyy')
               : formatDistanceToNowStrict(new Date(list.createdAt), { addSuffix: true })}
           </p>
+          {showNominatedBy &&
+            (list as any).nominations?.length > 0 &&
+            (list as any).nominations.filter((n: any) => n.userId !== list.createdBy).length >
+              0 && (
+              <p className="is-size-7 has-text-warning mb-0">
+                ★{' '}
+                {(list as any).nominations
+                  .filter((n: any) => n.userId !== list.createdBy)
+                  .map((n: any) => n.userId.split('@')[0])
+                  .join(', ')}
+              </p>
+            )}
           {isArchiveView && (list as any).Meetup?.date && (
             <p className="is-size-7 has-text-info mb-0">
               Meetup: {format(new Date((list as any).Meetup.date), 'MMM d, yyyy')}
@@ -138,14 +172,14 @@ export default function ListCard({
 
       <MovieList
         list={list}
-        onToggleSeenAction={onToggleSeenAction}
+        onToggleSeenAction={actions.onToggleSeen}
         isArchiveView={isArchiveView}
         score={score}
         allTimeScore={allTimeScore}
       />
 
       <footer className="card-footer">
-        {!isArchiveView && (
+        {!isArchiveView && !nomination && (
           <>
             <button
               className={`card-footer-item button ${hasVoted ? 'is-success is-light' : 'is-light'}`}
@@ -163,6 +197,21 @@ export default function ListCard({
             </button>
           </>
         )}
+        {nomination && (
+          <button
+            className={`card-footer-item button ${nomination.hasNominated ? 'is-warning is-light' : 'is-light'}`}
+            onClick={() => nomination.onNominate(list.id)}
+            disabled={pending}
+            title={nomination.hasNominated ? 'Remove nomination' : 'Nominate for next meetup'}
+          >
+            <span className="icon is-small" aria-hidden>
+              <span>{nomination.hasNominated ? '★' : '☆'}</span>
+            </span>
+            <span className="ml-2">
+              {nomination.isConfirming ? 'Change?' : nomination.hasNominated ? 'Nominated' : 'Nominate'}
+            </span>
+          </button>
+        )}
         <button
           className="card-footer-item button is-light"
           onClick={() => setIsCommentModalOpen(true)}
@@ -177,7 +226,7 @@ export default function ListCard({
           <>
             <button
               className="card-footer-item button has-text-link"
-              onClick={() => onEditAction(list.id)}
+              onClick={() => actions.onEdit(list.id)}
               disabled={pending}
             >
               Edit

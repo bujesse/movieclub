@@ -9,15 +9,16 @@ datasource db {
 
 // A list of movies created by a user
 model MovieList {
-  id          Int       @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   title       String
   description String?
   createdBy   String
   movies      Movie[]
   votes       Vote[]
   comments    Comment[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  nominations Nomination[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   Meetup      Meetup?
 
   @@index([createdBy])
@@ -93,9 +94,25 @@ model Meetup {
   id   Int       @id @default(autoincrement()) // singleton row
   date DateTime? // stored in UTC;
 
-  movieList   MovieList? @relation(fields: [movieListId], references: [id])
-  movieListId Int?       @unique
+  movieList   MovieList?   @relation(fields: [movieListId], references: [id])
+  movieListId Int?         @unique
   Vote        Vote[]
+  nominations Nomination[]
+}
+
+model Nomination {
+  id          Int       @id @default(autoincrement())
+  movieList   MovieList @relation(fields: [movieListId], references: [id], onDelete: Cascade)
+  movieListId Int
+  userId      String
+  createdAt   DateTime  @default(now())
+
+  meetup   Meetup @relation(fields: [meetupId], references: [id], onDelete: Cascade)
+  meetupId Int
+
+  @@unique([userId, meetupId])
+  @@index([movieListId, meetupId])
+  @@index([userId, meetupId])
 }
 
 model Seen {

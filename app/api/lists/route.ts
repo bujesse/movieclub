@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     include: {
       movies: true,
       votes: { where: { meetupId: nextMeetup.id } },
+      nominations: { where: { meetupId: nextMeetup.id } },
     },
     orderBy: {
       createdAt: 'asc',

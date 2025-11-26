@@ -3,35 +3,14 @@
 import { useState, useEffect } from 'react'
 import ListCard from '../ListCard'
 import { MovieListAllWithFlags } from '../page'
-
-function withDuplicateFlags(lists: MovieListAllWithFlags[]): MovieListAllWithFlags[] {
-  // Count how many lists each movie appears in (by tmdbId if present, else by id)
-  const counts = new Map<number, number>()
-  for (const list of lists) {
-    for (const m of list.movies) {
-      const key = (m as any).tmdbId ?? m.id
-      counts.set(key, (counts.get(key) ?? 0) + 1)
-    }
-  }
-
-  // Attach flags to each movie
-  return lists.map((list) => ({
-    ...list,
-    movies: list.movies.map((m) => {
-      const key = (m as any).tmdbId ?? m.id
-      const c = counts.get(key) ?? 1
-      return {
-        ...m,
-        inMultipleLists: c > 1,
-        listCount: c,
-      }
-    }),
-  }))
-}
+import { withDuplicateFlags } from '../../lib/listHelpers'
+import { useToggleSeen } from '../hooks/useMovieLists'
 
 export default function ArchivePage() {
   const [lists, setLists] = useState<MovieListAllWithFlags[]>([])
   const [loading, setLoading] = useState(true)
+
+  const onToggleSeen = useToggleSeen(setLists)
 
   useEffect(() => {
     const fetchLists = async () => {
@@ -51,19 +30,6 @@ export default function ArchivePage() {
     fetchLists()
   }, [])
 
-  const onToggleSeen = (tmdbId: number, hasSeen: boolean) => {
-    setLists((prev) =>
-      prev.map((l) => ({
-        ...l,
-        movies: l.movies.map((m) =>
-          m.tmdbId === tmdbId
-            ? { ...m, hasSeen: !hasSeen, seenCount: m.seenCount + (hasSeen ? -1 : 1) }
-            : m
-        ),
-      }))
-    )
-  }
-
   return (
     <section className="section">
       <div className="container has-text-centered mb-5">
@@ -81,12 +47,16 @@ export default function ArchivePage() {
             {lists.map((l) => (
               <div key={l.id} className="cell">
                 <ListCard
-                  onToggleSeenAction={onToggleSeen}
                   list={l}
-                  onDeleteAction={() => {}}
-                  onEditAction={() => {}}
-                  isArchiveView={true}
-                  initialCommentCount={l.commentCount}
+                  actions={{
+                    onEdit: () => {},
+                    onDelete: () => {},
+                    onToggleSeen,
+                  }}
+                  display={{
+                    isArchiveView: true,
+                    initialCommentCount: l.commentCount,
+                  }}
                 />
               </div>
             ))}

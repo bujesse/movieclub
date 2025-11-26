@@ -7,6 +7,7 @@ import FilterSortControls from './FilterSortControls'
 import { usePathname, useRouter } from 'next/navigation'
 import { useListsPage } from './ListsPageContext'
 import { ListFilter } from '../types/lists'
+import { ROUTES, isActiveRoute, shouldShowFilterControls } from '../lib/routes'
 
 export default function Header() {
   const { usedVotes, maxVotes } = useVotes()
@@ -21,12 +22,9 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const toggleMenu = () => setIsMenuOpen((v) => !v)
 
-  // Only show controls on home page
-  const isHomePage = pathname === '/'
-
   const handleVotesBadgeClick = () => {
-    if (!isHomePage) {
-      router.push('/')
+    if (!isActiveRoute(pathname, ROUTES.HOME)) {
+      router.push(ROUTES.HOME)
     }
     setFilter(ListFilter.Voted)
   }
@@ -56,7 +54,7 @@ export default function Header() {
     >
       {/* BRAND: logo + mobile votes + burger (same flex row) */}
       <div className="navbar-brand">
-        <a className="navbar-item" href="/">
+        <a className="navbar-item" href={ROUTES.HOME}>
           <strong>
             🎬 <span>Movie Club</span>
           </strong>
@@ -106,15 +104,33 @@ export default function Header() {
 
       <div id="main-navbar-menu" className={`navbar-menu ${isMenuOpen ? 'is-active' : ''}`}>
         <div className="navbar-start">
-          <a className="navbar-item" href="/">
-            Lists
+          <a
+            className={`navbar-item ${isActiveRoute(pathname, ROUTES.HOME) ? 'is-active' : ''}`}
+            href={ROUTES.HOME}
+          >
+            Nominated
           </a>
-          <a className="navbar-item" href="/archive">
+          <a
+            className={`navbar-item ${isActiveRoute(pathname, ROUTES.LISTS) ? 'is-active' : ''}`}
+            href={ROUTES.LISTS}
+          >
+            All Lists
+          </a>
+          <a
+            className={`navbar-item ${isActiveRoute(pathname, ROUTES.ARCHIVE) ? 'is-active' : ''}`}
+            href={ROUTES.ARCHIVE}
+          >
             Archive
           </a>
+          <a
+            className={`navbar-item ${isActiveRoute(pathname, ROUTES.HOW_IT_WORKS) ? 'is-active' : ''}`}
+            href={ROUTES.HOW_IT_WORKS}
+          >
+            How It Works
+          </a>
 
-          {/* Filter/Sort Controls - Desktop only, on lists page */}
-          {isHomePage && (
+          {/* Filter/Sort Controls - Desktop only, on lists pages */}
+          {shouldShowFilterControls(pathname) && (
             <div className="navbar-item is-hidden-touch">
               <FilterSortControls
                 filter={filter}

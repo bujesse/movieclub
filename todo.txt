@@ -1,19 +1,26 @@
 # Features
 
-* popularity - create some sort of "obscurity" score
-* Request: be able to comment on lists
+* Show more data after you've clicked that you've seen something
+    * Archive only?
+    * Add budget box office
 * add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
     * show in the typeahead too
+* oscar season
+    * badge for movies that have been nominated for an oscar
+    * maybe a separate page that has all oscar nominated movies and a checklist
 * Stats on the archive page, or a separate stats page
     * most desired actors
     * most popular genres
     * most popular directors
     * most popular decades
     * maybe have a look at letterboxd
+* popularity - create some sort of "obscurity" score
+* support filters on the archive page
+
+* idea: every time a new list takes the lead, record that, and be able to show a timeline of how the lead changed
 
 
 # Bugs
-* for some reason, the tmdb data isn't getting saved, but does when i manually refresh it. also, don't wipe out the tmdb stuff on edit if there's existing data, but the new save causes the tmdb data to be wiped out.
 
 
 # Post MVP
@@ -26,6 +33,6 @@
     
 
 # Tech Debt
-* add some sort of dev admin ability to edit/delete all lists, edit dates
+* add dev admin ability to edit/delete all lists, edit dates
 * add tests
 * DB backups
