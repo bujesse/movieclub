@@ -80,13 +80,27 @@ export default function HomePage() {
 
   const filteredAndSortedLists = useFilterAndSort(lists, filter, sortBy, user?.email)
 
+  // Check if current user has nominated a list
+  const hasNominated = lists.some((l) =>
+    (l as any).nominations?.some((n: any) => n.userId === user?.email)
+  )
+
   return (
     <section className="section">
       <NextMeetupCard onToggleSeenAction={onToggleSeen} />
 
       <div className="container has-text-centered mb-5">
         <h2 className="title">Nominated Lists</h2>
-        <p className="subtitle">Vote for your favorite nominated list for the next meetup</p>
+        {loading ? (
+          <p className="subtitle">&nbsp;</p>
+        ) : hasNominated ? (
+          <p className="subtitle">Vote for your favorite nominated list for the next meetup</p>
+        ) : (
+          <p className="subtitle has-text-danger">
+            You haven't nominated a list yet. <a href={ROUTES.LISTS}>Go to All Lists</a> to place
+            your nomination.
+          </p>
+        )}
       </div>
 
       {/* Mobile Bottom Nav (Sticky) */}
@@ -139,6 +153,7 @@ export default function HomePage() {
                   display={{
                     showNominatedBy: true,
                     initialCommentCount: l.commentCount,
+                    hideAdminActions: true,
                   }}
                   voting={{
                     onVoteChange,

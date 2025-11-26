@@ -23,6 +23,7 @@ type ListCardProps = {
     isArchiveView?: boolean
     showNominatedBy?: boolean
     initialCommentCount?: number
+    hideAdminActions?: boolean
   }
   voting?: {
     onVoteChange: (listId: number, hasVoted: boolean, allTimeScore: number) => void
@@ -38,6 +39,7 @@ export default function ListCard({ list, actions, display, voting, nomination }:
   const isArchiveView = display?.isArchiveView ?? false
   const showNominatedBy = display?.showNominatedBy ?? false
   const initialCommentCount = display?.initialCommentCount ?? 0
+  const hideAdminActions = display?.hideAdminActions ?? false
   const { user } = useCurrentUser()
   const myEmail = user!.email
   const { canVote } = useVotes()
@@ -208,7 +210,11 @@ export default function ListCard({ list, actions, display, voting, nomination }:
               <span>{nomination.hasNominated ? '★' : '☆'}</span>
             </span>
             <span className="ml-2">
-              {nomination.isConfirming ? 'Change?' : nomination.hasNominated ? 'Nominated' : 'Nominate'}
+              {nomination.isConfirming
+                ? 'Change?'
+                : nomination.hasNominated
+                  ? 'Nominated'
+                  : 'Nominate'}
             </span>
           </button>
         )}
@@ -222,7 +228,7 @@ export default function ListCard({ list, actions, display, voting, nomination }:
           </span>
           <span className="ml-2">{commentCount}</span>
         </button>
-        {!isArchiveView && wasCreatedByMe && (
+        {!isArchiveView && !hideAdminActions && wasCreatedByMe && (
           <>
             <button
               className="card-footer-item button has-text-link"

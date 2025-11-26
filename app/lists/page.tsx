@@ -11,6 +11,7 @@ import { useListsPage } from '../ListsPageContext'
 import { MovieListAllWithFlags } from '../page'
 import { withDuplicateFlags } from '../../lib/listHelpers'
 import { useToggleSeen, useFilterAndSort, useScrollToTopOnChange } from '../hooks/useMovieLists'
+import { ROUTES } from '../../lib/routes'
 
 export default function AllListsPage() {
   const [lists, setLists] = useState<MovieListAllWithFlags[]>([])
@@ -109,7 +110,8 @@ export default function AllListsPage() {
     const currentNominatedList = lists.find((l) =>
       (l as any).nominations?.some((n: any) => n.userId === user?.email)
     )
-    const isChangingNomination = !hasNominated && currentNominatedList && currentNominatedList.id !== listId
+    const isChangingNomination =
+      !hasNominated && currentNominatedList && currentNominatedList.id !== listId
 
     if (isChangingNomination && confirmChangeNominationId !== listId) {
       setConfirmChangeNominationId(listId)
@@ -135,7 +137,9 @@ export default function AllListsPage() {
           if (hasNominated) return l
           return {
             ...l,
-            nominations: ((l as any).nominations || []).filter((n: any) => n.userId !== user?.email),
+            nominations: ((l as any).nominations || []).filter(
+              (n: any) => n.userId !== user?.email
+            ),
           }
         })
       )
@@ -155,7 +159,8 @@ export default function AllListsPage() {
       <div className="container has-text-centered mb-5">
         <h2 className="title">All Movie Lists</h2>
         <p className="subtitle">
-          Nominate your favorite list for the next meetup - only nominated lists can be voted on
+          Nominate your favorite list for the next meetup. Vote on{' '}
+          <a href={ROUTES.HOME}>Nominated Lists</a>.
         </p>
         <button className="button is-primary is-medium mt-3" onClick={handleCreateNewList}>
           + Create New List
@@ -189,7 +194,9 @@ export default function AllListsPage() {
         >
           <div className="grid is-row-gap-5 is-column-gap-4 is-multiline">
             {filteredAndSortedLists.map((l) => {
-              const hasNominated = (l as any).nominations?.some((n: any) => n.userId === user?.email)
+              const hasNominated = (l as any).nominations?.some(
+                (n: any) => n.userId === user?.email
+              )
               const isConfirmingChange = confirmChangeNominationId === l.id
               return (
                 <div key={l.id} className="cell">
