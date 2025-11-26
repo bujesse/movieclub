@@ -56,6 +56,7 @@ export default function ArchivePage() {
                   display={{
                     isArchiveView: true,
                     initialCommentCount: l.commentCount,
+                    showNominatedBy: true,
                   }}
                 />
               </div>

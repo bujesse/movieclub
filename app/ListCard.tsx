@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
 import { formatDistanceToNowStrict, format } from 'date-fns'
-import { Eye, EyeClosed, RefreshCw, MessageCircle } from 'lucide-react'
+import { Eye, EyeClosed, RefreshCw, MessageCircle, Star } from 'lucide-react'
 import { formatMinutes } from '../lib/helpers'
 import CommentModal from './CommentModal'
 
@@ -30,6 +30,7 @@ type ListCardProps = {
   }
   nomination?: {
     hasNominated: boolean
+    isAlreadyNominated: boolean
     onNominate: (listId: number) => void
     isConfirming: boolean
   }
@@ -201,18 +202,28 @@ export default function ListCard({ list, actions, display, voting, nomination }:
         )}
         {nomination && (
           <button
-            className={`card-footer-item button ${nomination.hasNominated ? 'is-warning is-light' : 'is-light'}`}
+            className={`card-footer-item button is-light `}
             onClick={() => nomination.onNominate(list.id)}
-            disabled={pending}
-            title={nomination.hasNominated ? 'Remove nomination' : 'Nominate for next meetup'}
+            disabled={pending || (nomination.isAlreadyNominated && !nomination.hasNominated)}
+            title={
+              nomination.hasNominated
+                ? 'Remove nomination'
+                : nomination.isAlreadyNominated
+                  ? 'Already nominated by someone else'
+                  : 'Nominate for next meetup'
+            }
           >
             <span className="icon is-small" aria-hidden>
-              <span>{nomination.hasNominated ? '★' : '☆'}</span>
+              {nomination.hasNominated || nomination.isAlreadyNominated ? (
+                <Star size={16} fill="#2d2f3b" />
+              ) : (
+                <Star size={16} />
+              )}
             </span>
-            <span className="ml-2">
+            <span>
               {nomination.isConfirming
                 ? 'Change?'
-                : nomination.hasNominated
+                : nomination.hasNominated || nomination.isAlreadyNominated
                   ? 'Nominated'
                   : 'Nominate'}
             </span>

@@ -197,6 +197,7 @@ export default function AllListsPage() {
               const hasNominated = (l as any).nominations?.some(
                 (n: any) => n.userId === user?.email
               )
+              const isAlreadyNominated = ((l as any).nominations?.length ?? 0) > 0
               const isConfirmingChange = confirmChangeNominationId === l.id
               return (
                 <div key={l.id} className="cell">
@@ -209,9 +210,11 @@ export default function AllListsPage() {
                     }}
                     display={{
                       initialCommentCount: l.commentCount,
+                      showNominatedBy: true,
                     }}
                     nomination={{
                       hasNominated,
+                      isAlreadyNominated,
                       onNominate: handleNominate,
                       isConfirming: isConfirmingChange,
                     }}
