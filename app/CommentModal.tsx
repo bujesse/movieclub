@@ -4,7 +4,23 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
 import { formatDistanceToNowStrict } from 'date-fns'
-import { Ellipsis, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
+
+function linkifyText(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  const parts = text.split(urlRegex)
+
+  return parts.map((part, i) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="has-text-link">
+          {part}
+        </a>
+      )
+    }
+    return part
+  })
+}
 
 type Comment = {
   id: number
@@ -160,7 +176,7 @@ export default function CommentModal({
                         </button>
                       )}
                     </div>
-                    <p style={{ whiteSpace: 'pre-wrap' }}>{comment.text}</p>
+                    <p style={{ whiteSpace: 'pre-wrap' }}>{linkifyText(comment.text)}</p>
                   </div>
                 )
               })}
