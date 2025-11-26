@@ -3,6 +3,7 @@ import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '../../../../lib/prisma'
 import { normalizeMovies } from '../../../../lib/helpers'
+import { saveMovieDetails } from '../../../../lib/tmdb'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // Auth
@@ -31,6 +32,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       where: { id: movieListId },
       data,
       include: { movies: true, votes: true },
+    })
+
+    const ids = Array.from(new Set(updated.movies.map((m) => m.tmdbId)))
+    const updatedList = await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
+    updated.movies = updated.movies.map((m) => {
+      const res = updatedList.find(
+        (r) => r.status === 'fulfilled' && r.value[0]?.tmdbId === m.tmdbId
+      ) as PromiseFulfilledResult<any[]> | undefined
+      return res?.value[0] ?? m
     })
 
     return NextResponse.json(updated, { status: 200 })
