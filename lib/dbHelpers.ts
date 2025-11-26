@@ -13,8 +13,9 @@ export async function getNextMeetupWithList(tx: Tx) {
     nowIso
   )
   if (!rows.length) return null
+  const meetupId = rows[0].id
   return tx.meetup.findUnique({
-    where: { id: rows[0].id },
+    where: { id: meetupId },
     select: {
       id: true,
       date: true,
@@ -22,7 +23,9 @@ export async function getNextMeetupWithList(tx: Tx) {
       movieList: {
         include: {
           movies: true,
-          votes: true,
+          votes: {
+            where: { meetupId },
+          },
         },
       },
     },
@@ -53,8 +56,8 @@ export async function getNextMeetupWithoutList(tx: Tx) {
 
 export async function getPastMeetupLists(tx: Tx) {
   const nowIso = new Date().toISOString()
-  const rows = await tx.$queryRawUnsafe<{ movieListId: number }[]>(
-    `SELECT movieListId
+  const rows = await tx.$queryRawUnsafe<{ id: number; movieListId: number }[]>(
+    `SELECT id, movieListId
      FROM "Meetup"
      WHERE movieListId IS NOT NULL AND datetime(date) < datetime(?)
      ORDER BY datetime(date) DESC`,
@@ -63,18 +66,20 @@ export async function getPastMeetupLists(tx: Tx) {
 
   if (rows.length === 0) return []
 
-  const listIds = rows.map((r) => r.movieListId)
+  const lists = await Promise.all(
+    rows.map((row) =>
+      tx.movieList.findUnique({
+        where: { id: row.movieListId },
+        include: {
+          movies: true,
+          votes: {
+            where: { meetupId: row.id },
+          },
+          Meetup: true,
+        },
+      })
+    )
+  )
 
-  return tx.movieList.findMany({
-    where: {
-      id: {
-        in: listIds,
-      },
-    },
-    include: {
-      movies: true,
-      votes: true,
-      Meetup: true,
-    },
-  })
+  return lists.filter((l): l is NonNullable<typeof l> => l !== null)
 }
