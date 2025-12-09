@@ -10,19 +10,22 @@
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio --browser=none"
+    "prisma:studio": "prisma studio --browser=none",
+    "import:oscars": "tsx scripts/import-oscar-data.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",
     "autoprefixer": "^10.4.21",
     "bulma": "^1.0.4",
+    "csv-parse": "^6.1.0",
     "date-fns": "^4.1.0",
     "jose": "^6.1.0",
     "lucide-react": "^0.542.0",
     "next": "^15.5.0",
     "postcss": "^8.5.6",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

@@ -11,6 +11,7 @@ import { formatDistanceToNowStrict, format } from 'date-fns'
 import { Eye, EyeClosed, RefreshCw, MessageCircle, Star } from 'lucide-react'
 import { formatMinutes } from '../lib/helpers'
 import CommentModal from './CommentModal'
+import MovieInfoModal from './MovieInfoModal'
 
 type ListCardProps = {
   list: MovieListAllWithFlags
@@ -57,6 +58,7 @@ export default function ListCard({ list, actions, display, voting, nomination }:
   const [areYouSure, setAreYouSure] = useState(false)
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false)
   const [commentCount, setCommentCount] = useState(initialCommentCount)
+  const [selectedMovieForOscar, setSelectedMovieForOscar] = useState<any | null>(null)
   const wasCreatedByMe = list.createdBy === myEmail
   const totalRunTime = list.movies.reduce(
     (acc, m) => acc + (m.runtime && m.runtime > 0 ? m.runtime : 0),
@@ -288,6 +290,12 @@ export default function ListCard({ list, actions, display, voting, nomination }:
             .catch(console.error)
         }}
       />
+
+      <MovieInfoModal
+        isOpen={selectedMovieForOscar !== null}
+        movie={selectedMovieForOscar}
+        onClose={() => setSelectedMovieForOscar(null)}
+      />
     </div>
   )
 }
@@ -306,6 +314,7 @@ export function MovieList({
   allTimeScore?: number | string
 }) {
   const router = useRouter()
+  const [selectedMovieForOscar, setSelectedMovieForOscar] = useState<any | null>(null)
 
   const { isAdminMode } = useCurrentUser()
 
@@ -366,17 +375,68 @@ export function MovieList({
           <div className="content movie-list">
             {list.movies.map((m, i) => (
               <div key={(m.id ?? i) as React.Key} className="movie-item">
-                <a
-                  href={`https://letterboxd.com/tmdb/${m.tmdbId}`}
+                <div
                   className="movie-link"
-                  target="_blank"
                   role="button"
                   tabIndex={0}
-                  title="View on Letterboxd"
+                  title="View movie details"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setSelectedMovieForOscar(m)
+                  }}
+                  style={{ cursor: 'pointer' }}
                 >
                   <div className="movie-text">
-                    <div className="movie-title">
+                    <div
+                      className="movie-title"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        flexWrap: 'wrap',
+                      }}
+                    >
                       <strong>{m.title}</strong>
+
+                      {/* Oscar Badges */}
+                      {(m.oscarNominations > 0 || m.oscarWins > 0) && (
+                        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                          {m.oscarWins > 0 && (
+                            <span
+                              className="tag is-warning is-light"
+                              style={{
+                                fontSize: '0.7rem',
+                                padding: '0.15rem 0.4rem',
+                                height: 'auto',
+                                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                                color: '#1a1a1a',
+                                fontWeight: 'bold',
+                              }}
+                              title={`${m.oscarWins} Oscar win${m.oscarWins > 1 ? 's' : ''}`}
+                            >
+                              🏆 {m.oscarWins}
+                            </span>
+                          )}
+                          {m.oscarNominations > m.oscarWins && (
+                            <span
+                              className="tag is-light"
+                              style={{
+                                fontSize: '0.7rem',
+                                padding: '0.15rem 0.4rem',
+                                height: 'auto',
+                                background: 'linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%)',
+                                color: '#1a1a1a',
+                                fontWeight: 'bold',
+                              }}
+                              title={`${m.oscarNominations - m.oscarWins} nomination${m.oscarNominations - m.oscarWins > 1 ? 's' : ''}`}
+                            >
+                              ⭐ {m.oscarNominations - m.oscarWins}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                       {m.inMultipleLists && (
                         <span
                           title="This movie appears in multiple lists"
@@ -399,17 +459,33 @@ export function MovieList({
                       {m.runtime && m.runtime > 0 && <div>{formatMinutes(m.runtime)}</div>}
                     </div>
                   </div>
-                </a>
-                <div
-                  onClick={(e) => handleSeenClick(e, m.tmdbId, m.hasSeen)}
-                  className={`seen pl-2 is-size-7 ${m.hasSeen ? 'has-text-success' : 'has-text-grey-light'}`}
-                >
-                  <span className={`is-size-7`}>{m.seenCount}</span>
-                  {m.hasSeen ? <Eye /> : <EyeClosed />}
                 </div>
-                {isAdminMode && (
-                  <RefreshCw onClick={(e) => handleRefreshClick(e, m.tmdbId)} className={'pl-2'} />
-                )}
+                <div
+                  className="movie-actions"
+                  style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
+                >
+                  {/* Seen Icon */}
+                  <div
+                    onClick={(e) => handleSeenClick(e, m.tmdbId, m.hasSeen)}
+                    className={`seen is-size-7 ${m.hasSeen ? 'has-text-success' : 'has-text-grey-light'}`}
+                    style={{
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    <span className={`is-size-7`}>{m.seenCount}</span>
+                    {m.hasSeen ? <Eye /> : <EyeClosed />}
+                  </div>
+
+                  {isAdminMode && (
+                    <RefreshCw
+                      onClick={(e) => handleRefreshClick(e, m.tmdbId)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -487,6 +563,12 @@ export function MovieList({
           {list.description}
         </p>
       )}
+
+      <MovieInfoModal
+        isOpen={selectedMovieForOscar !== null}
+        movie={selectedMovieForOscar}
+        onClose={() => setSelectedMovieForOscar(null)}
+      />
     </div>
   )
 }

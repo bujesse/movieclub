@@ -23,6 +23,31 @@ export async function enrichLists<
     meEmail ? seenRows.filter((r) => r.userId === meEmail).map((r) => r.tmdbId) : []
   )
 
+  // Fetch Oscar data for all movies
+  const oscarSummaries = await prisma.oscarMovieSummary.findMany({
+    where: { tmdbId: { in: tmdbIds } },
+    select: {
+      tmdbId: true,
+      totalNominations: true,
+      totalWins: true,
+      categoryBreakdown: true,
+    },
+  })
+
+  const oscarMap = new Map(
+    oscarSummaries.map((o) => [
+      o.tmdbId,
+      {
+        totalNominations: o.totalNominations,
+        totalWins: o.totalWins,
+        categoryBreakdown: o.categoryBreakdown as Record<
+          string,
+          { nominations: number; wins: number }
+        >,
+      },
+    ])
+  )
+
   // Aggregate all-time votes for all lists
   const listIds = lists.map((l) => l.id)
   const voteAgg = await prisma.vote.groupBy({
@@ -48,11 +73,16 @@ export async function enrichLists<
     commentCount: commentCountMap.get(l.id) ?? 0,
     movies: l.movies.map((m) => {
       const seenBy = seenByMap.get(m.tmdbId) ?? []
+      const oscarData = oscarMap.get(m.tmdbId)
       return {
         ...m,
         seenBy,
         seenCount: seenBy.length,
         hasSeen: mySeen.has(m.tmdbId),
+        // Oscar fields
+        oscarNominations: oscarData?.totalNominations ?? 0,
+        oscarWins: oscarData?.totalWins ?? 0,
+        oscarCategories: oscarData?.categoryBreakdown ?? null,
       }
     }),
   }))

@@ -28,6 +28,9 @@ export type MovieListAllWithFlags = Omit<MovieListAll, 'movies'> & {
     seenBy: string[]
     seenCount: number
     hasSeen: boolean
+    oscarNominations: number
+    oscarWins: number
+    oscarCategories: Record<string, { nominations: number; wins: number }> | null
   })[]
 }
 function HomePageContent() {

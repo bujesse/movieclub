@@ -139,3 +139,52 @@ model Comment {
   @@index([movieListId])
   @@index([userId])
 }
+
+// Oscar nomination data (global per movie)
+model OscarNomination {
+  id              Int      @id @default(autoincrement())
+
+  // Identity fields
+  tmdbId          Int?     // Can be null if TMDB lookup failed
+  imdbId          String   // Always present from CSV (e.g., "tt0019217")
+
+  // CSV fields - full data preservation
+  ceremony        Int      // 1, 2, 3... 97
+  year            String   // "1927/28", "2024"
+  class           String   // "Acting", "Production", "Directing"
+  canonicalCategory String // "ACTOR IN A LEADING ROLE"
+  category        String   // "ACTOR", "ACTRESS"
+  nomId           String   // "an0051251"
+  film            String   // "The Noose"
+  name            String?  // Nominee name (e.g., "Richard Barthelmess")
+  nominees        String?  // Full nominees string
+  nomineeIds      String?  // IMDB IDs of people
+  winner          Boolean  @default(false)
+  detail          String?  // Additional details
+  note            String?  // Notes
+  citation        String?  // Citation text
+  multifilmNomination Boolean @default(false)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tmdbId])
+  @@index([imdbId])
+  @@unique([nomId])
+}
+
+// Pre-aggregated Oscar counts for performance
+model OscarMovieSummary {
+  id              Int      @id @default(autoincrement())
+  tmdbId          Int      @unique
+  imdbId          String
+  totalNominations Int     @default(0)
+  totalWins       Int      @default(0)
+
+  // Category breakdowns (JSON for flexibility)
+  categoryBreakdown Json?  // { "Acting": { "nominations": 3, "wins": 1 }, ... }
+
+  updatedAt       DateTime @updatedAt
+
+  @@index([tmdbId])
+}
