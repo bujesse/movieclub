@@ -24,6 +24,7 @@ type ListCardProps = {
     showNominatedBy?: boolean
     initialCommentCount?: number
     hideAdminActions?: boolean
+    isLocked?: boolean
   }
   voting?: {
     onVoteChange: (listId: number, hasVoted: boolean, allTimeScore: number) => void
@@ -33,6 +34,7 @@ type ListCardProps = {
     isAlreadyNominated: boolean
     onNominate: (listId: number) => void
     isConfirming: boolean
+    isLocked?: boolean
   }
 }
 
@@ -41,6 +43,7 @@ export default function ListCard({ list, actions, display, voting, nomination }:
   const showNominatedBy = display?.showNominatedBy ?? false
   const initialCommentCount = display?.initialCommentCount ?? 0
   const hideAdminActions = display?.hideAdminActions ?? false
+  const isLocked = display?.isLocked ?? false
   const { user } = useCurrentUser()
   const myEmail = user!.email
   const { canVote } = useVotes()
@@ -104,7 +107,13 @@ export default function ListCard({ list, actions, display, voting, nomination }:
         // router.push("/login")
         return
       }
-      if (!res.ok) return
+      if (!res.ok) {
+        if (res.status === 400) {
+          const data = await res.json()
+          alert(data.error || 'Cannot delete list')
+        }
+        return
+      }
       actions.onDelete(list.id)
       router.refresh()
     } finally {
@@ -204,13 +213,19 @@ export default function ListCard({ list, actions, display, voting, nomination }:
           <button
             className={`card-footer-item button is-light `}
             onClick={() => nomination.onNominate(list.id)}
-            disabled={pending || (nomination.isAlreadyNominated && !nomination.hasNominated)}
+            disabled={
+              pending ||
+              (nomination.isAlreadyNominated && !nomination.hasNominated) ||
+              nomination.isLocked
+            }
             title={
-              nomination.hasNominated
-                ? 'Remove nomination'
-                : nomination.isAlreadyNominated
-                  ? 'Already nominated by someone else'
-                  : 'Nominate for next meetup'
+              nomination.isLocked
+                ? 'Locked - other users have voted for this nomination'
+                : nomination.hasNominated
+                  ? 'Remove nomination'
+                  : nomination.isAlreadyNominated
+                    ? 'Already nominated by someone else'
+                    : 'Nominate for next meetup'
             }
           >
             <span className="icon is-small" aria-hidden>
@@ -251,7 +266,8 @@ export default function ListCard({ list, actions, display, voting, nomination }:
             <button
               className="card-footer-item button has-text-danger"
               onClick={handleDelete}
-              disabled={pending}
+              disabled={pending || isLocked}
+              title={isLocked ? 'Cannot delete - other users have voted for this nomination' : ''}
             >
               {areYouSure ? 'Are you sure?' : 'Delete'}
             </button>

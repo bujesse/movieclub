@@ -124,7 +124,14 @@ export default function AllListsPage() {
     try {
       const method = hasNominated ? 'DELETE' : 'POST'
       const res = await fetch(`/api/lists/${listId}/nominate`, { method })
-      if (!res.ok) return
+
+      if (!res.ok) {
+        if (res.status === 400) {
+          const data = await res.json()
+          alert(data.error || 'Cannot remove nomination')
+        }
+        return
+      }
 
       setLists((prev) =>
         prev.map((l) => {
@@ -199,6 +206,11 @@ export default function AllListsPage() {
               )
               const isAlreadyNominated = ((l as any).nominations?.length ?? 0) > 0
               const isConfirmingChange = confirmChangeNominationId === l.id
+              // Check if there are votes from users other than the current user
+              const hasVotesFromOthers = (l as any).votes?.some(
+                (v: any) => v.userId !== user?.email
+              )
+              const isLocked = hasNominated && hasVotesFromOthers
               return (
                 <div key={l.id} className="cell">
                   <ListCard
@@ -211,12 +223,14 @@ export default function AllListsPage() {
                     display={{
                       initialCommentCount: l.commentCount,
                       showNominatedBy: true,
+                      isLocked,
                     }}
                     nomination={{
                       hasNominated,
                       isAlreadyNominated,
                       onNominate: handleNominate,
                       isConfirming: isConfirmingChange,
+                      isLocked,
                     }}
                   />
                 </div>

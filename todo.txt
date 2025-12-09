@@ -3,25 +3,29 @@
 * Show more data after you've clicked that you've seen something
     * Archive only?
     * Add budget box office
-* add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
-    * show in the typeahead too
 * oscar season
     * badge for movies that have been nominated for an oscar
     * maybe a separate page that has all oscar nominated movies and a checklist
+* swipe left or right to navigate between lists on the list detail page
+* add an icon to indicate that a movie has already been seen in a current or past Meetup (e.g. a checkmark)
+    * show in the typeahead too
+* add dev admin ability to edit/delete all lists, edit dates
 * Stats on the archive page, or a separate stats page
+    * all time watched length
     * most desired actors
-    * most popular genres
     * most popular directors
     * most popular decades
     * maybe have a look at letterboxd
+* Lists
+    * create lists (top x of y, genre based, director based, actor based, decade based, etc)
+    * lists like "oscar movies", "imdb top 250 movies of all time"
+    * import lists from external sources (letterboxd, imdb, etc)
 * popularity - create some sort of "obscurity" score
 * support filters on the archive page
 
 * idea: every time a new list takes the lead, record that, and be able to show a timeline of how the lead changed
 
-
 # Bugs
-
 
 # Post MVP
 * Progress bar for seen for next meetup - need to know how many people are in the club
@@ -33,6 +37,5 @@
     
 
 # Tech Debt
-* add dev admin ability to edit/delete all lists, edit dates
 * add tests
 * DB backups

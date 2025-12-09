@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '../../../../lib/prisma'
 import { normalizeMovies } from '../../../../lib/helpers'
 import { saveMovieDetails } from '../../../../lib/tmdb'
+import { getNextMeetupWithoutList } from '../../../../lib/dbHelpers'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // Auth
@@ -72,6 +73,35 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
   if (list.createdBy !== userId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Check if the list has a nomination with votes from other users
+  const nextMeetup = await getNextMeetupWithoutList(prisma)
+  if (nextMeetup) {
+    const nomination = await prisma.nomination.findFirst({
+      where: {
+        movieListId,
+        userId,
+        meetupId: nextMeetup.id,
+      },
+    })
+
+    if (nomination) {
+      const votesFromOthers = await prisma.vote.count({
+        where: {
+          movieListId,
+          meetupId: nextMeetup.id,
+          userId: { not: userId },
+        },
+      })
+
+      if (votesFromOthers > 0) {
+        return NextResponse.json(
+          { error: 'Cannot delete list - other users have voted for this nomination' },
+          { status: 400 }
+        )
+      }
+    }
   }
 
   try {
