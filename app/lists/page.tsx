@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import ListModal from '../ListModal'
 import ListCard from '../ListCard'
 import { useRouter } from 'next/navigation'
@@ -10,10 +10,10 @@ import FilterSortControls from '../FilterSortControls'
 import { useListsPage } from '../ListsPageContext'
 import { MovieListAllWithFlags } from '../page'
 import { withDuplicateFlags } from '../../lib/listHelpers'
-import { useToggleSeen, useFilterAndSort, useScrollToTopOnChange } from '../hooks/useMovieLists'
+import { useToggleSeen, useFilterAndSort, useScrollToTopOnChange, useURLSync } from '../hooks/useMovieLists'
 import { ROUTES } from '../../lib/routes'
 
-export default function AllListsPage() {
+function AllListsPageContent() {
   const [lists, setLists] = useState<MovieListAllWithFlags[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -24,6 +24,9 @@ export default function AllListsPage() {
   const router = useRouter()
   const { user } = useCurrentUser()
   const { filter, sortBy, setFilter, setSortBy } = useListsPage()
+
+  // Enable URL persistence for filters and sorting
+  const { isReady } = useURLSync()
 
   const onToggleSeen = useToggleSeen(setLists)
   useScrollToTopOnChange(filter, sortBy)
@@ -174,25 +177,27 @@ export default function AllListsPage() {
         </button>
       </div>
 
-      <div className="navbar is-dark is-fixed-bottom is-hidden-desktop">
-        <div
-          className="is-flex is-justify-content-center"
-          style={{
-            padding: '0.75rem',
-            paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)',
-          }}
-        >
-          <FilterSortControls
-            filter={filter}
-            sortBy={sortBy}
-            onFilterChangeAction={setFilter}
-            onSortChangeAction={setSortBy}
-            variant="compact"
-          />
+      {isReady && (
+        <div className="navbar is-dark is-fixed-bottom is-hidden-desktop">
+          <div
+            className="is-flex is-justify-content-center"
+            style={{
+              padding: '0.75rem',
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)',
+            }}
+          >
+            <FilterSortControls
+              filter={filter}
+              sortBy={sortBy}
+              onFilterChangeAction={setFilter}
+              onSortChangeAction={setSortBy}
+              variant="compact"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      {loading ? (
+      {!isReady || loading ? (
         <p>Loading lists...</p>
       ) : (
         <div
@@ -249,5 +254,13 @@ export default function AllListsPage() {
         onSubmit={handleSubmit}
       />
     </section>
+  )
+}
+
+export default function AllListsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AllListsPageContent />
+    </Suspense>
   )
 }

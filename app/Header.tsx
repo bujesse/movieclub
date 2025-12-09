@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useCurrentUser } from './CurrentUserProvider'
 import { useVotes } from './VotesProvider'
 import FilterSortControls from './FilterSortControls'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useListsPage } from './ListsPageContext'
 import { ListFilter } from '../types/lists'
-import { ROUTES, isActiveRoute, shouldShowFilterControls } from '../lib/routes'
+import { ROUTES, isActiveRoute, shouldShowFilterControls, buildRouteWithParams } from '../lib/routes'
 
 export default function Header() {
   const { usedVotes, maxVotes } = useVotes()
@@ -17,14 +17,26 @@ export default function Header() {
 
   const pathname = usePathname()
   const router = useRouter()
-  const { filter, sortBy, setFilter, setSortBy } = useListsPage()
+  const searchParams = useSearchParams()
+  const { filter, sortBy, setFilter, setSortBy, isReady } = useListsPage()
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const toggleMenu = () => setIsMenuOpen((v) => !v)
+
+  // Prevent hydration mismatch by only showing dynamic content after mount
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // Build URLs with current filter/sort params
+  const homeUrl = buildRouteWithParams(ROUTES.HOME, searchParams)
+  const listsUrl = buildRouteWithParams(ROUTES.LISTS, searchParams)
+  const archiveUrl = buildRouteWithParams(ROUTES.ARCHIVE, searchParams)
 
   const handleVotesBadgeClick = () => {
     if (!isActiveRoute(pathname, ROUTES.HOME)) {
-      router.push(ROUTES.HOME)
+      router.push(homeUrl)
     }
     setFilter(ListFilter.Voted)
   }
@@ -54,7 +66,7 @@ export default function Header() {
     >
       {/* BRAND: logo + mobile votes + burger (same flex row) */}
       <div className="navbar-brand">
-        <a className="navbar-item" href={ROUTES.HOME}>
+        <a className="navbar-item" href={homeUrl}>
           <strong>
             🎬 <span>Movie Club</span>
           </strong>
@@ -106,19 +118,19 @@ export default function Header() {
         <div className="navbar-start">
           <a
             className={`navbar-item ${isActiveRoute(pathname, ROUTES.HOME) ? 'is-active' : ''}`}
-            href={ROUTES.HOME}
+            href={homeUrl}
           >
             Nominated
           </a>
           <a
             className={`navbar-item ${isActiveRoute(pathname, ROUTES.LISTS) ? 'is-active' : ''}`}
-            href={ROUTES.LISTS}
+            href={listsUrl}
           >
             All Lists
           </a>
           <a
             className={`navbar-item ${isActiveRoute(pathname, ROUTES.ARCHIVE) ? 'is-active' : ''}`}
-            href={ROUTES.ARCHIVE}
+            href={archiveUrl}
           >
             Archive
           </a>
@@ -130,7 +142,7 @@ export default function Header() {
           </a>
 
           {/* Filter/Sort Controls - Desktop only, on lists pages */}
-          {shouldShowFilterControls(pathname) && (
+          {shouldShowFilterControls(pathname) && isMounted && isReady && (
             <div className="navbar-item is-hidden-touch">
               <FilterSortControls
                 filter={filter}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import ListCard from './ListCard'
 import { Prisma } from '@prisma/client'
 import { useRouter } from 'next/navigation'
@@ -10,7 +10,7 @@ import FilterSortControls from './FilterSortControls'
 import { useListsPage } from './ListsPageContext'
 import { ROUTES } from '../lib/routes'
 import { withDuplicateFlags } from '../lib/listHelpers'
-import { useToggleSeen, useFilterAndSort, useScrollToTopOnChange } from './hooks/useMovieLists'
+import { useToggleSeen, useFilterAndSort, useScrollToTopOnChange, useURLSync } from './hooks/useMovieLists'
 
 export type MovieListAll = Prisma.MovieListGetPayload<{
   include: {
@@ -30,13 +30,16 @@ export type MovieListAllWithFlags = Omit<MovieListAll, 'movies'> & {
     hasSeen: boolean
   })[]
 }
-export default function HomePage() {
+function HomePageContent() {
   const [lists, setLists] = useState<MovieListAllWithFlags[]>([])
   const [loading, setLoading] = useState(true)
 
   const router = useRouter()
   const { user } = useCurrentUser()
   const { filter, sortBy, setFilter, setSortBy } = useListsPage()
+
+  // Enable URL persistence for filters and sorting
+  const { isReady } = useURLSync()
 
   const onToggleSeen = useToggleSeen(setLists)
   useScrollToTopOnChange(filter, sortBy)
@@ -104,25 +107,27 @@ export default function HomePage() {
       </div>
 
       {/* Mobile Bottom Nav (Sticky) */}
-      <div className="navbar is-dark is-fixed-bottom is-hidden-desktop">
-        <div
-          className="is-flex is-justify-content-center"
-          style={{
-            padding: '0.75rem',
-            paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)',
-          }}
-        >
-          <FilterSortControls
-            filter={filter}
-            sortBy={sortBy}
-            onFilterChangeAction={setFilter}
-            onSortChangeAction={setSortBy}
-            variant="compact"
-          />
+      {isReady && (
+        <div className="navbar is-dark is-fixed-bottom is-hidden-desktop">
+          <div
+            className="is-flex is-justify-content-center"
+            style={{
+              padding: '0.75rem',
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)',
+            }}
+          >
+            <FilterSortControls
+              filter={filter}
+              sortBy={sortBy}
+              onFilterChangeAction={setFilter}
+              onSortChangeAction={setSortBy}
+              variant="compact"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      {loading ? (
+      {!isReady || loading ? (
         <p>Loading nominated lists...</p>
       ) : lists.length === 0 ? (
         <div className="container has-text-centered">
@@ -165,5 +170,13 @@ export default function HomePage() {
         </div>
       )}
     </section>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomePageContent />
+    </Suspense>
   )
 }

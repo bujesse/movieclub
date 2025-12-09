@@ -19,3 +19,14 @@ body .container {
   object-fit: cover; /* crop nicely */
   border-radius: 4px;
 }
+
+/* Active navbar item styling */
+.navbar-item.is-active {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 3px solid #3273dc !important;
+  font-weight: 600 !important;
+}
+
+.navbar-item.is-active:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}

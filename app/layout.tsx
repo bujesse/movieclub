@@ -7,6 +7,7 @@ import { VotesProvider } from './VotesProvider'
 import { NextMeetupProvider } from './NextMeetupContext'
 import { ListsPageProvider } from './ListsPageContext'
 import { loadRootData } from '../lib/loadRootData'
+import { Suspense } from 'react'
 
 export const metadata = {
   title: 'Movie Club',
@@ -34,7 +35,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <VotesProvider initialUsed={voteCount}>
             <NextMeetupProvider nextMeetup={nextMeetup}>
               <ListsPageProvider>
-                <Header />
+                <Suspense fallback={<div className="navbar is-fixed-top is-spaced is-dark" />}>
+                  <Header />
+                </Suspense>
 
                 {/* Main Content */}
                 <main className="container" style={{ minHeight: '75vh' }}>
