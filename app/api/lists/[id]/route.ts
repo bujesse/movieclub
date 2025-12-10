@@ -5,6 +5,7 @@ import { prisma } from '../../../../lib/prisma'
 import { normalizeMovies } from '../../../../lib/helpers'
 import { saveMovieDetails } from '../../../../lib/tmdb'
 import { getNextMeetupWithoutList } from '../../../../lib/dbHelpers'
+import { enrichLists } from '../../../../lib/enrichLists'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // Auth
@@ -22,6 +23,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   try {
     const { title, description, movies } = await req.json()
+    const nextMeetup = await getNextMeetupWithoutList(prisma)
+
     const data: any = {}
     if (title) data.title = title
     data.description = description
@@ -29,22 +32,35 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       data.movies = { deleteMany: {}, create: normalizeMovies(movies) }
     }
 
-    const updated = await prisma.movieList.update({
+    await prisma.movieList.update({
       where: { id: movieListId },
       data,
-      include: { movies: true, votes: true },
     })
 
-    const ids = Array.from(new Set(updated.movies.map((m) => m.tmdbId)))
-    const updatedList = await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
-    updated.movies = updated.movies.map((m) => {
-      const res = updatedList.find(
-        (r) => r.status === 'fulfilled' && r.value[0]?.tmdbId === m.tmdbId
-      ) as PromiseFulfilledResult<any[]> | undefined
-      return res?.value[0] ?? m
+    // Only update movie details if movies were provided
+    if (movies) {
+      const ids: number[] = Array.from(new Set(movies.map((m: any) => m.tmdbId)))
+      await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
+    }
+
+    // Re-fetch with updated details
+    const updated = await prisma.movieList.findUnique({
+      where: { id: movieListId },
+      include: {
+        movies: true,
+        votes: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+        nominations: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+      },
     })
 
-    return NextResponse.json(updated, { status: 200 })
+    if (!updated) {
+      return NextResponse.json({ error: 'List not found' }, { status: 404 })
+    }
+
+    // Enrich with Oscar data, seen counts, etc.
+    const [enriched] = await enrichLists([updated], userId)
+
+    return NextResponse.json(enriched, { status: 200 })
   } catch (err: any) {
     if (err?.code === 'P2002') {
       return NextResponse.json({ error: 'Duplicate movie' }, { status: 409 })

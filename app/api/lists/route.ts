@@ -45,7 +45,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getIdentityFromRequest(req)
+    if (!user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { title, description, createdBy, movies } = await req.json()
+    const nextMeetup = await getNextMeetupWithoutList(prisma)
+
     const list = await prisma.movieList.create({
       data: {
         title,
@@ -53,21 +58,35 @@ export async function POST(req: NextRequest) {
         createdBy,
         movies: { create: normalizeMovies(movies) },
       },
-      include: { movies: true, votes: true },
+      include: {
+        movies: true,
+        votes: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+        nominations: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+      },
     })
 
     // hydrate details for new movies
     const ids = Array.from(new Set(list.movies.map((m) => m.tmdbId)))
-    const updatedList = await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
-    // map back updated movies
-    list.movies = list.movies.map((m) => {
-      const res = updatedList.find(
-        (r) => r.status === 'fulfilled' && r.value[0]?.tmdbId === m.tmdbId
-      ) as PromiseFulfilledResult<any[]> | undefined
-      return res?.value[0] ?? m
+    await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
+
+    // Re-fetch the list with updated movie details
+    const updatedList = await prisma.movieList.findUnique({
+      where: { id: list.id },
+      include: {
+        movies: true,
+        votes: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+        nominations: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+      },
     })
 
-    return NextResponse.json(list, { status: 201 })
+    if (!updatedList) {
+      return NextResponse.json({ error: 'List not found' }, { status: 404 })
+    }
+
+    // Enrich with Oscar data, seen counts, etc.
+    const [enriched] = await enrichLists([updatedList], user.email)
+
+    return NextResponse.json(enriched, { status: 201 })
   } catch (err: any) {
     if (err?.code === 'P2002') {
       return NextResponse.json({ error: 'Duplicate movie' }, { status: 409 })
