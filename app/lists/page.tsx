@@ -229,6 +229,7 @@ function AllListsPageContent() {
                       initialCommentCount: l.commentCount,
                       showNominatedBy: true,
                       isLocked,
+                      showVoteTags: true,
                     }}
                     nomination={{
                       hasNominated,

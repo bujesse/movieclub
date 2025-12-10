@@ -26,6 +26,7 @@ type ListCardProps = {
     initialCommentCount?: number
     hideAdminActions?: boolean
     isLocked?: boolean
+    showVoteTags?: boolean
   }
   voting?: {
     onVoteChange: (listId: number, hasVoted: boolean, allTimeScore: number) => void
@@ -45,6 +46,7 @@ export default function ListCard({ list, actions, display, voting, nomination }:
   const initialCommentCount = display?.initialCommentCount ?? 0
   const hideAdminActions = display?.hideAdminActions ?? false
   const isLocked = display?.isLocked ?? false
+  const showVoteTags = display?.showVoteTags ?? false
   const { user } = useCurrentUser()
   const myEmail = user!.email
   const { canVote } = useVotes()
@@ -188,6 +190,7 @@ export default function ListCard({ list, actions, display, voting, nomination }:
         list={list}
         onToggleSeenAction={actions.onToggleSeen}
         isArchiveView={isArchiveView}
+        showVoteTags={showVoteTags}
         score={score}
         allTimeScore={allTimeScore}
       />
@@ -304,12 +307,14 @@ export function MovieList({
   list,
   onToggleSeenAction,
   isArchiveView = false,
+  showVoteTags = false,
   score,
   allTimeScore,
 }: {
   list: MovieListAllWithFlags
   onToggleSeenAction: (tmdbId: number, hasSeen: boolean) => void
   isArchiveView?: boolean
+  showVoteTags?: boolean
   score?: number
   allTimeScore?: number | string
 }) {
@@ -360,7 +365,7 @@ export function MovieList({
         {/* Left: Poster carousel */}
         <div className="column is-full-mobile is-narrow has-text-centered-mobile">
           <PosterCarousel movies={list.movies} intervalMs={5000} />
-          {isArchiveView && score !== undefined && allTimeScore !== undefined && (
+          {(isArchiveView || showVoteTags) && score !== undefined && allTimeScore !== undefined && (
             <div className="mt-3 has-text-centered">
               <span className="tag is-success" title="Votes received (all-time total)">
                 {score} ({allTimeScore}) {score === 1 ? 'vote' : 'votes'}
