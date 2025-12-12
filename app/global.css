@@ -20,6 +20,11 @@ body .container {
   border-radius: 4px;
 }
 
+/* Reduce box shadow */
+.box {
+  box-shadow: 0 0.125em 0.25em rgba(10, 10, 10, 0.1) !important;
+}
+
 /* Active navbar item styling */
 .navbar-item.is-active {
   background-color: rgba(255, 255, 255, 0.1) !important;

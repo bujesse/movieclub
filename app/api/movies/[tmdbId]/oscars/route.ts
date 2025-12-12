@@ -16,23 +16,34 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid TMDB ID' }, { status: 400 })
   }
 
-  const nominations = await prisma.oscarNomination.findMany({
-    where: { tmdbId },
-    select: {
-      ceremony: true,
-      year: true,
-      class: true,
-      category: true,
-      canonicalCategory: true,
-      name: true,
-      winner: true,
-      detail: true,
-    },
-    orderBy: [
-      { ceremony: 'asc' },
-      { winner: 'desc' }, // Winners first within each ceremony
-    ],
-  })
+  const [nominations, movie] = await Promise.all([
+    prisma.oscarNomination.findMany({
+      where: { tmdbId },
+      select: {
+        ceremony: true,
+        year: true,
+        class: true,
+        category: true,
+        canonicalCategory: true,
+        name: true,
+        winner: true,
+        detail: true,
+      },
+      orderBy: [
+        { ceremony: 'asc' },
+        { winner: 'desc' }, // Winners first within each ceremony
+      ],
+    }),
+    prisma.movie.findFirst({
+      where: { tmdbId },
+      select: {
+        releaseDate: true,
+      },
+    }),
+  ])
 
-  return NextResponse.json(nominations)
+  return NextResponse.json({
+    nominations,
+    releaseDate: movie?.releaseDate ?? null,
+  })
 }
