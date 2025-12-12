@@ -442,6 +442,24 @@ export function MovieList({
                         </div>
                       )}
 
+                      {m.inMeetup && (
+                        <span
+                          className="tag"
+                          title="Seen in a meetup"
+                          aria-label="Seen in a meetup"
+                          style={{
+                            fontSize: '0.7rem',
+                            padding: '0.15rem 0.4rem',
+                            height: 'auto',
+                            background: '#48c78e',
+                            color: 'white',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          ✓ Watched
+                        </span>
+                      )}
+
                       {m.inMultipleLists && (
                         <span
                           title="This movie appears in multiple lists"

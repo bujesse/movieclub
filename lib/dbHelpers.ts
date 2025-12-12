@@ -83,3 +83,26 @@ export async function getPastMeetupLists(tx: Tx) {
 
   return lists.filter((l): l is NonNullable<typeof l> => l !== null)
 }
+
+export async function getMeetupMovieTmdbIds(tx: Tx): Promise<Set<number>> {
+  const rows = await tx.$queryRawUnsafe<{ id: number; movieListId: number }[]>(
+    `SELECT id, movieListId
+     FROM "Meetup"
+     WHERE movieListId IS NOT NULL`
+  )
+
+  if (rows.length === 0) return new Set()
+
+  const movieListIds = rows.map((row) => row.movieListId)
+
+  const movies = await tx.movie.findMany({
+    where: {
+      movieListId: { in: movieListIds },
+    },
+    select: {
+      tmdbId: true,
+    },
+  })
+
+  return new Set(movies.map((m) => m.tmdbId))
+}

@@ -27,10 +27,21 @@ export default function ListModal({
   const [description, setDescription] = useState('')
   const [movieInput, setMovieInput] = useState('')
   const [movieArray, setMovieArray] = useState<TmdbMovie[]>([])
+  const [meetupMovieTmdbIds, setMeetupMovieTmdbIds] = useState<Set<number>>(new Set())
 
   const [showErrors, setShowErrors] = useState(false)
   const hasMovies = movieArray.length > 0
   const isValid = listTitle.trim() !== '' && hasMovies
+
+  // Fetch meetup movies
+  useEffect(() => {
+    if (isOpen) {
+      fetch('/api/meetups/movies')
+        .then((res) => res.json())
+        .then((data) => setMeetupMovieTmdbIds(new Set(data)))
+        .catch((err) => console.error('Failed to fetch meetup movies:', err))
+    }
+  }, [isOpen])
 
   // Pre-fill when editing (minimal change: keep structure/styling identical)
   useEffect(() => {
@@ -185,11 +196,30 @@ export default function ListModal({
 
                           {/* Main content */}
                           <div className="media-content">
-                            <p className="is-size-6 mb-1">
-                              <strong>{movie.title}</strong>{' '}
-                              <small className="has-text-grey">
-                                {movie.release_date?.slice(0, 4) || 'N/A'}
-                              </small>
+                            <p className="is-size-6 mb-1" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span>
+                                <strong>{movie.title}</strong>{' '}
+                                <small className="has-text-grey">
+                                  {movie.release_date?.slice(0, 4) || 'N/A'}
+                                </small>
+                              </span>
+                              {meetupMovieTmdbIds.has(movie.id) && (
+                                <span
+                                  className="tag"
+                                  title="Seen in a meetup"
+                                  aria-label="Seen in a meetup"
+                                  style={{
+                                    fontSize: '0.7rem',
+                                    padding: '0.15rem 0.4rem',
+                                    height: 'auto',
+                                    background: '#48c78e',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                  }}
+                                >
+                                  ✓ Watched
+                                </span>
+                              )}
                             </p>
 
                             {/* Extra info row */}
