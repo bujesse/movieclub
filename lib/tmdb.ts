@@ -55,14 +55,20 @@ export async function saveMovieDetails(tmdbId: number) {
   const directorsList = credits.crew.filter((c) => c.job === 'Director')
   const actorsList = credits.cast.sort((a, b) => a.order - b.order).slice(0, ACTOR_LIMIT)
 
-  await prisma.movie.updateMany({
+  await prisma.globalMovie.updateMany({
     where: { tmdbId },
     data: {
       runtime: details.runtime,
-      original_language: details.original_language ?? null,
+      originalLanguage: details.original_language,
       popularity: details.popularity,
       budget: details.budget,
       revenue: details.revenue,
+      overview: details.overview,
+      voteAverage: details.vote_average,
+      voteCount: details.vote_count,
+      posterPath: details.poster_path,
+      backdropPath: details.backdrop_path,
+      genres: details.genres,
       directors: directorsList.map((d) => ({
         id: d.id,
         name: d.name,
@@ -78,5 +84,5 @@ export async function saveMovieDetails(tmdbId: number) {
     },
   })
 
-  return prisma.movie.findMany({ where: { tmdbId } })
+  return prisma.globalMovie.findMany({ where: { tmdbId } })
 }

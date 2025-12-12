@@ -1,13 +1,15 @@
 import { prisma } from './prisma'
 import { getMeetupMovieTmdbIds } from './dbHelpers'
 
-export async function enrichLists<
+export async function enrichCollections<
   T extends {
     id: number
     movies: { movie: { tmdbId: number } }[]
   },
->(lists: T[], meEmail?: string | null) {
-  const tmdbIds = Array.from(new Set(lists.flatMap((l) => l.movies.map((m) => m.movie.tmdbId))))
+>(collections: T[], meEmail?: string | null) {
+  const tmdbIds = Array.from(
+    new Set(collections.flatMap((c) => c.movies.map((m) => m.movie.tmdbId)))
+  )
 
   // Fetch movies that have been in meetups
   const meetupMovieTmdbIds = await getMeetupMovieTmdbIds(prisma)
@@ -52,43 +54,40 @@ export async function enrichLists<
     ])
   )
 
-  // Aggregate all-time votes for all lists
-  const listIds = lists.map((l) => l.id)
-  const voteAgg = await prisma.vote.groupBy({
-    by: ['movieListId'],
-    where: { movieListId: { in: listIds } },
-    _count: { _all: true },
-  })
-  const votesTotalMap = new Map<number, number>(voteAgg.map((r) => [r.movieListId, r._count._all]))
-
-  // Aggregate comment counts for all lists
-  const commentAgg = await prisma.comment.groupBy({
-    by: ['movieListId'],
-    where: { movieListId: { in: listIds } },
-    _count: { _all: true },
-  })
-  const commentCountMap = new Map<number, number>(
-    commentAgg.map((r) => [r.movieListId, r._count._all])
-  )
-
-  return lists.map((l) => ({
-    ...l,
-    votesTotal: votesTotalMap.get(l.id) ?? 0,
-    commentCount: commentCountMap.get(l.id) ?? 0,
-    movies: l.movies.map((m) => {
+  return collections.map((c) => {
+    const enrichedMovies = c.movies.map((m) => {
       const seenBy = seenByMap.get(m.movie.tmdbId) ?? []
       const oscarData = oscarMap.get(m.movie.tmdbId)
       return {
-        ...m.movie, // Flatten GlobalMovie data from junction record
-        seenBy,
-        seenCount: seenBy.length,
-        hasSeen: mySeen.has(m.movie.tmdbId),
-        inMeetup: meetupMovieTmdbIds.has(m.movie.tmdbId),
-        // Oscar fields
-        oscarNominations: oscarData?.totalNominations ?? 0,
-        oscarWins: oscarData?.totalWins ?? 0,
-        oscarCategories: oscarData?.categoryBreakdown ?? null,
+        ...m,
+        movie: {
+          ...m.movie,
+          seenBy,
+          seenCount: seenBy.length,
+          hasSeen: mySeen.has(m.movie.tmdbId),
+          inMeetup: meetupMovieTmdbIds.has(m.movie.tmdbId),
+          oscarNominations: oscarData?.totalNominations ?? 0,
+          oscarWins: oscarData?.totalWins ?? 0,
+          oscarCategories: oscarData?.categoryBreakdown ?? null,
+        },
       }
-    }),
-  }))
+    })
+
+    // Calculate stats
+    const userSeenCount = meEmail
+      ? enrichedMovies.filter((m) => m.movie.hasSeen).length
+      : 0
+    const clubSeenCount = enrichedMovies.filter((m) => m.movie.inMeetup).length
+    const anyoneSeenCount = enrichedMovies.filter((m) => m.movie.seenCount > 0).length
+
+    return {
+      ...c,
+      movies: enrichedMovies,
+      stats: {
+        userSeenCount,
+        clubSeenCount,
+        anyoneSeenCount,
+      },
+    }
+  })
 }

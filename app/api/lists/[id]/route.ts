@@ -25,36 +25,75 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { title, description, movies } = await req.json()
     const nextMeetup = await getNextMeetupWithoutList(prisma)
 
-    const data: any = {}
-    if (title) data.title = title
-    data.description = description
-    if (movies) {
-      data.movies = { deleteMany: {}, create: normalizeMovies(movies) }
-    }
+    const normalizedMovies = movies ? normalizeMovies(movies) : null
 
-    await prisma.movieList.update({
-      where: { id: movieListId },
-      data,
-    })
+    const updated = await prisma.$transaction(async (tx) => {
+      // Update title and description
+      const data: any = {}
+      if (title) data.title = title
+      data.description = description
 
-    // Only update movie details if movies were provided
-    if (movies) {
-      const ids: number[] = Array.from(new Set(movies.map((m: any) => m.tmdbId)))
-      await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
-    }
+      await tx.movieList.update({
+        where: { id: movieListId },
+        data,
+      })
 
-    // Re-fetch with updated details
-    const updated = await prisma.movieList.findUnique({
-      where: { id: movieListId },
-      include: {
-        movies: true,
-        votes: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
-        nominations: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
-      },
+      // If movies provided, update junction entries
+      if (normalizedMovies) {
+        // Delete existing junction entries
+        await tx.movieListMovie.deleteMany({
+          where: { movieListId },
+        })
+
+        // Upsert GlobalMovies and create new junction entries
+        const movieIds: number[] = []
+        for (const movie of normalizedMovies) {
+          const globalMovie = await tx.globalMovie.upsert({
+            where: { tmdbId: movie.tmdbId },
+            update: {}, // Don't overwrite existing
+            create: movie,
+          })
+          movieIds.push(globalMovie.id)
+        }
+
+        // Create new junction entries
+        await tx.movieListMovie.createMany({
+          data: movieIds.map((movieId, index) => ({
+            movieListId,
+            movieId,
+            order: index,
+          })),
+        })
+      }
+
+      // Re-fetch with updated details
+      return tx.movieList.findUnique({
+        where: { id: movieListId },
+        include: {
+          movies: {
+            include: {
+              movie: true,
+            },
+            orderBy: {
+              order: 'asc',
+            },
+          },
+          votes: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+          nominations: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+        },
+      })
     })
 
     if (!updated) {
       return NextResponse.json({ error: 'List not found' }, { status: 404 })
+    }
+
+    // Hydrate TMDB details in background (don't await)
+    if (normalizedMovies) {
+      const tmdbIds = Array.from(new Set(normalizedMovies.map((m) => m.tmdbId)))
+      Promise.allSettled(tmdbIds.map((id) => saveMovieDetails(id)))
+        .then(() => console.log(`Hydrated ${tmdbIds.length} movies for list ${movieListId}`))
+        .catch((err) => console.error('Error hydrating movie details:', err))
     }
 
     // Enrich with Oscar data, seen counts, etc.
@@ -121,10 +160,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   try {
-    // Delete the list and its associated movies and votes in a transaction
+    // Delete the list and its associated data in a transaction
     await prisma.$transaction([
       prisma.vote.deleteMany({ where: { movieListId: movieListId } }),
-      prisma.movie.deleteMany({ where: { movieListId: movieListId } }),
+      prisma.nomination.deleteMany({ where: { movieListId: movieListId } }),
+      prisma.movieListMovie.deleteMany({ where: { movieListId: movieListId } }),
       prisma.movieList.delete({ where: { id: movieListId } }),
     ])
 

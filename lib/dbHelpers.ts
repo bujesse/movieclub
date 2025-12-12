@@ -22,7 +22,14 @@ export async function getNextMeetupWithList(tx: Tx) {
       movieListId: true,
       movieList: {
         include: {
-          movies: true,
+          movies: {
+            include: {
+              movie: true,
+            },
+            orderBy: {
+              order: 'asc',
+            },
+          },
           votes: {
             where: { meetupId },
           },
@@ -49,7 +56,19 @@ export async function getNextMeetupWithoutList(tx: Tx) {
       id: true,
       date: true,
       movieListId: true,
-      movieList: { include: { movies: true, votes: true } },
+      movieList: {
+        include: {
+          movies: {
+            include: {
+              movie: true,
+            },
+            orderBy: {
+              order: 'asc',
+            },
+          },
+          votes: true,
+        },
+      },
     },
   })
 }
@@ -71,7 +90,14 @@ export async function getPastMeetupLists(tx: Tx) {
       tx.movieList.findUnique({
         where: { id: row.movieListId },
         include: {
-          movies: true,
+          movies: {
+            include: {
+              movie: true,
+            },
+            orderBy: {
+              order: 'asc',
+            },
+          },
           votes: {
             where: { meetupId: row.id },
           },
@@ -95,14 +121,19 @@ export async function getMeetupMovieTmdbIds(tx: Tx): Promise<Set<number>> {
 
   const movieListIds = rows.map((row) => row.movieListId)
 
-  const movies = await tx.movie.findMany({
+  // Query junction table and join with GlobalMovie to get tmdbIds
+  const junctionEntries = await tx.movieListMovie.findMany({
     where: {
       movieListId: { in: movieListIds },
     },
-    select: {
-      tmdbId: true,
+    include: {
+      movie: {
+        select: {
+          tmdbId: true,
+        },
+      },
     },
   })
 
-  return new Set(movies.map((m) => m.tmdbId))
+  return new Set(junctionEntries.map((entry) => entry.movie.tmdbId))
 }

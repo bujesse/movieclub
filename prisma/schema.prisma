@@ -9,35 +9,31 @@ datasource db {
 
 // A list of movies created by a user
 model MovieList {
-  id          Int          @id @default(autoincrement())
+  id          Int               @id @default(autoincrement())
   title       String
   description String?
   createdBy   String
-  movies      Movie[]
+  movies      MovieListMovie[]  // Changed to junction table
   votes       Vote[]
   comments    Comment[]
   nominations Nomination[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   Meetup      Meetup?
 
   @@index([createdBy])
   @@index([createdAt])
 }
 
-// Individual movies in a list
-model Movie {
+// Global movie table - single source of truth for movie data
+model GlobalMovie {
   id          Int       @id @default(autoincrement())
-  movieList   MovieList @relation(fields: [movieListId], references: [id], onDelete: Cascade)
-  movieListId Int
-
-  // TMDb identity
-  tmdbId Int
+  tmdbId      Int       @unique
 
   // Titles & language
   title            String
   originalTitle    String?
-  originalLanguage String? // keep plain for SQLite
+  originalLanguage String?
 
   // Dates & details
   releaseDate DateTime?
@@ -46,7 +42,7 @@ model Movie {
   voteCount   Int?
 
   // Media paths (raw TMDb paths, not full URLs)
-  posterPath   String? // e.g. "/abc123.jpg"
+  posterPath   String?
   backdropPath String?
 
   // Genres (JSON array of ints: [28, 12, ...])
@@ -64,12 +60,73 @@ model Movie {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Allow same TMDb movie in different lists, but only once per list
-  @@unique([movieListId, tmdbId])
-  // Handy indexes
+  // Relations
+  movieListMovies  MovieListMovie[]
+  collectionMovies CollectionMovie[]
+
   @@index([tmdbId])
   @@index([title])
   @@index([releaseDate])
+}
+
+// Junction table: MovieList <-> GlobalMovie (many-to-many)
+model MovieListMovie {
+  id          Int         @id @default(autoincrement())
+  movieList   MovieList   @relation(fields: [movieListId], references: [id], onDelete: Cascade)
+  movieListId Int
+  movie       GlobalMovie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId     Int
+
+  // Ordering within list
+  order Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@unique([movieListId, movieId])
+  @@index([movieListId])
+  @@index([movieId])
+}
+
+// Collection model for curated movie lists (e.g., IMDB Top 250)
+model Collection {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  letterboxdUrl String?  // Source URL path (e.g., "imdb-top-250")
+
+  // Access control
+  createdBy String
+  isGlobal  Boolean @default(false) // True for admin-created, false for user collections
+
+  // Sync metadata
+  lastSyncedAt DateTime?
+  movieCount   Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movies CollectionMovie[]
+
+  @@index([createdBy])
+  @@index([isGlobal])
+}
+
+// Junction table: Collection <-> GlobalMovie (many-to-many)
+model CollectionMovie {
+  id           Int         @id @default(autoincrement())
+  collection   Collection  @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId Int
+  movie        GlobalMovie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId      Int
+
+  // Ordering within collection
+  order Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@unique([collectionId, movieId])
+  @@index([collectionId])
+  @@index([movieId])
 }
 
 // Votes on a MovieList

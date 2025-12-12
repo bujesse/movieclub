@@ -32,6 +32,7 @@ export default function Header() {
   // Build URLs with current filter/sort params
   const homeUrl = buildRouteWithParams(ROUTES.HOME, searchParams)
   const listsUrl = buildRouteWithParams(ROUTES.LISTS, searchParams)
+  const collectionsUrl = ROUTES.COLLECTIONS
   const archiveUrl = buildRouteWithParams(ROUTES.ARCHIVE, searchParams)
 
   const handleVotesBadgeClick = () => {
@@ -129,6 +130,12 @@ export default function Header() {
             All Lists
           </a>
           <a
+            className={`navbar-item ${isActiveRoute(pathname, ROUTES.COLLECTIONS) ? 'is-active' : ''}`}
+            href={collectionsUrl}
+          >
+            Collections
+          </a>
+          <a
             className={`navbar-item ${isActiveRoute(pathname, ROUTES.ARCHIVE) ? 'is-active' : ''}`}
             href={archiveUrl}
           >
@@ -172,6 +179,7 @@ export default function Header() {
                 className={`tag is-small ${isAdminMode ? 'is-danger is-selected' : ''}`}
                 onClick={toggleAdminMode}
                 title="Toggle admin mode"
+                suppressHydrationWarning
               >
                 Admin {isAdminMode ? 'ON' : 'OFF'}
               </button>

@@ -34,7 +34,7 @@ export async function GET(
         { winner: 'desc' }, // Winners first within each ceremony
       ],
     }),
-    prisma.movie.findFirst({
+    prisma.globalMovie.findFirst({
       where: { tmdbId },
       select: {
         releaseDate: true,

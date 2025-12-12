@@ -1,6 +1,7 @@
 export const ROUTES = {
   HOME: '/',
   LISTS: '/lists',
+  COLLECTIONS: '/collections',
   ARCHIVE: '/archive',
   HOW_IT_WORKS: '/how-it-works',
 } as const

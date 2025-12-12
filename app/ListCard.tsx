@@ -191,6 +191,7 @@ export default function ListCard({ list, actions, display, voting, nomination }:
         onToggleSeenAction={actions.onToggleSeen}
         isArchiveView={isArchiveView}
         showVoteTags={showVoteTags}
+        showWatchedBadge={!isArchiveView}
         score={score}
         allTimeScore={allTimeScore}
       />
@@ -308,6 +309,7 @@ export function MovieList({
   onToggleSeenAction,
   isArchiveView = false,
   showVoteTags = false,
+  showWatchedBadge = true,
   score,
   allTimeScore,
 }: {
@@ -315,6 +317,7 @@ export function MovieList({
   onToggleSeenAction: (tmdbId: number, hasSeen: boolean) => void
   isArchiveView?: boolean
   showVoteTags?: boolean
+  showWatchedBadge?: boolean
   score?: number
   allTimeScore?: number | string
 }) {
@@ -442,7 +445,7 @@ export function MovieList({
                         </div>
                       )}
 
-                      {m.inMeetup && (
+                      {showWatchedBadge && m.inMeetup && (
                         <span
                           className="tag"
                           title="Seen in a meetup"

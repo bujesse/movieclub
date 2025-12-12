@@ -20,7 +20,14 @@ export async function GET(req: NextRequest) {
       Meetup: null,
     },
     include: {
-      movies: true,
+      movies: {
+        include: {
+          movie: true,
+        },
+        orderBy: {
+          order: 'asc',
+        },
+      },
       votes: { where: { meetupId: nextMeetup.id } },
       nominations: { where: { meetupId: nextMeetup.id } },
     },
@@ -51,29 +58,65 @@ export async function POST(req: NextRequest) {
     const { title, description, createdBy, movies } = await req.json()
     const nextMeetup = await getNextMeetupWithoutList(prisma)
 
-    const list = await prisma.movieList.create({
-      data: {
-        title,
-        description,
-        createdBy,
-        movies: { create: normalizeMovies(movies) },
-      },
-      include: {
-        movies: true,
-        votes: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
-        nominations: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
-      },
+    const normalizedMovies = normalizeMovies(movies)
+
+    // Use transaction to upsert GlobalMovies and create MovieList with junction entries
+    const list = await prisma.$transaction(async (tx) => {
+      // Upsert GlobalMovies first
+      const movieIds: number[] = []
+      for (const movie of normalizedMovies) {
+        const globalMovie = await tx.globalMovie.upsert({
+          where: { tmdbId: movie.tmdbId },
+          update: {}, // Don't overwrite existing movies
+          create: movie,
+        })
+        movieIds.push(globalMovie.id)
+      }
+
+      // Create MovieList with junction entries
+      return tx.movieList.create({
+        data: {
+          title,
+          description,
+          createdBy,
+          movies: {
+            create: movieIds.map((movieId, index) => ({
+              movieId,
+              order: index,
+            })),
+          },
+        },
+        include: {
+          movies: {
+            include: {
+              movie: true,
+            },
+            orderBy: {
+              order: 'asc',
+            },
+          },
+          votes: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+          nominations: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
+        },
+      })
     })
 
     // hydrate details for new movies
-    const ids = Array.from(new Set(list.movies.map((m) => m.tmdbId)))
+    const ids = Array.from(new Set(list.movies.map((m) => m.movie.tmdbId)))
     await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
 
     // Re-fetch the list with updated movie details
     const updatedList = await prisma.movieList.findUnique({
       where: { id: list.id },
       include: {
-        movies: true,
+        movies: {
+          include: {
+            movie: true,
+          },
+          orderBy: {
+            order: 'asc',
+          },
+        },
         votes: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
         nominations: nextMeetup ? { where: { meetupId: nextMeetup.id } } : true,
       },

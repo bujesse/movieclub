@@ -1,0 +1,311 @@
+'use client'
+
+import { useState } from 'react'
+import { tmdbImage } from '../lib/tmdb'
+import { Eye, EyeClosed, X as XIcon } from 'lucide-react'
+import MovieInfoModal from './MovieInfoModal'
+
+type Movie = {
+  id: number
+  order: number
+  movie: {
+    tmdbId: number
+    title: string
+    releaseDate: Date | null
+    posterPath: string | null
+    runtime: number | null
+    oscarNominations: number
+    oscarWins: number
+    oscarCategories: Record<string, { nominations: number; wins: number }> | null
+    budget?: number | null
+    revenue?: number | null
+    seenCount: number
+    hasSeen: boolean
+    inMeetup: boolean
+  }
+}
+
+type CollectionMoviesModalProps = {
+  isOpen: boolean
+  onClose: () => void
+  collectionName: string
+  movies: Movie[]
+  onSeenClick: (e: React.MouseEvent, movie: any) => void
+  getSeenState: (tmdbId: number) => { hasSeen: boolean; seenCount: number }
+  showOscarBadges?: boolean
+  showClubBadge?: boolean
+}
+
+export default function CollectionMoviesModal({
+  isOpen,
+  onClose,
+  collectionName,
+  movies,
+  onSeenClick,
+  getSeenState,
+  showOscarBadges = true,
+  showClubBadge = true,
+}: CollectionMoviesModalProps) {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedMovie, setSelectedMovie] = useState<any | null>(null)
+
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onClose()
+  }
+
+  if (!isOpen) return null
+
+  // Filter movies by search query
+  const filteredMovies = movies.filter((m) =>
+    m.movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  return (
+    <>
+      <div className="modal is-active">
+        <div className="modal-background" onClick={handleBackgroundClick} />
+        <div className="modal-card" style={{ width: '90%', maxWidth: '1000px', height: '90%' }}>
+          <header
+            className="modal-card-head"
+            style={{ padding: '0.4rem 1rem', position: 'relative', zIndex: 1 }}
+          >
+            <div style={{ flex: 1 }}>
+              <p className="modal-card-title">{collectionName}</p>
+              <p className="is-size-7 has-text-grey-light" style={{ marginTop: '0.25rem' }}>
+                {filteredMovies.length} {filteredMovies.length === 1 ? 'movie' : 'movies'}
+                {searchQuery && ` (filtered from ${movies.length})`}
+              </p>
+            </div>
+            <button
+              className="delete"
+              aria-label="close"
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+              }}
+            ></button>
+          </header>
+
+          {/* Movie list with search bar inside */}
+          <section
+            className="modal-card-body"
+            style={{ padding: '0.5rem 1rem 0.25rem', flex: 1, overflowY: 'auto' }}
+          >
+            {/* Search bar */}
+            <div className="field" style={{ marginBottom: '0.5rem' }}>
+              <div className="control has-icons-right">
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="Search movies..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
+                {searchQuery && (
+                  <span
+                    className="icon is-right"
+                    style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <XIcon size={16} />
+                  </span>
+                )}
+              </div>
+            </div>
+            {filteredMovies.length === 0 ? (
+              <div className="has-text-centered has-text-grey">No movies found</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                {filteredMovies.map((m, index) => {
+                  const seenState = getSeenState(m.movie.tmdbId)
+                  const year = m.movie.releaseDate
+                    ? new Date(m.movie.releaseDate).getFullYear()
+                    : null
+
+                  return (
+                    <div
+                      key={m.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.3rem',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => setSelectedMovie(m.movie)}
+                    >
+                      {/* Rank number */}
+                      <div
+                        style={{
+                          minWidth: '14px',
+                          textAlign: 'right',
+                          fontSize: '0.95rem',
+                          color: '#666',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {m.order + 1}
+                      </div>
+
+                      {/* Poster */}
+                      <div
+                        style={{
+                          width: '50px',
+                          minWidth: '50px',
+                          aspectRatio: '2/3',
+                          background: '#111',
+                          borderRadius: '3px',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <img
+                          src={tmdbImage(m.movie.posterPath, 'w92')}
+                          alt={m.movie.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+
+                      {/* Movie info & badges */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: '0.9rem',
+                            fontWeight: 500,
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word',
+                          }}
+                        >
+                          {m.movie.title}
+                        </div>
+
+                        {/* Badges */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '0.25rem',
+                            marginTop: '0.25rem',
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          {year && (
+                            <span
+                              className="tag is-small is-dark"
+                              style={{ fontSize: '0.65rem' }}
+                            >
+                              {year}
+                            </span>
+                          )}
+                          {showClubBadge && m.movie.inMeetup && (
+                            <span
+                              className="tag is-small"
+                              style={{
+                                background: '#48c78e',
+                                color: 'white',
+                                fontSize: '0.65rem',
+                              }}
+                            >
+                              CLUB
+                            </span>
+                          )}
+                          {showOscarBadges && m.movie.oscarWins > 0 && (
+                            <span
+                              className="tag is-small"
+                              style={{
+                                background: '#f7d794',
+                                color: '#333',
+                                fontSize: '0.65rem',
+                              }}
+                              title={`${m.movie.oscarWins} Oscar win${m.movie.oscarWins > 1 ? 's' : ''}`}
+                            >
+                              🏆 {m.movie.oscarWins}
+                            </span>
+                          )}
+                          {showOscarBadges &&
+                            m.movie.oscarNominations > 0 &&
+                            m.movie.oscarWins === 0 && (
+                              <span
+                                className="tag is-small"
+                                style={{
+                                  background: '#dfe6e9',
+                                  color: '#333',
+                                  fontSize: '0.65rem',
+                                }}
+                                title={`${m.movie.oscarNominations} Oscar nomination${
+                                  m.movie.oscarNominations > 1 ? 's' : ''
+                                }`}
+                              >
+                                ⭐ {m.movie.oscarNominations}
+                              </span>
+                            )}
+                          {m.movie.runtime && (
+                            <span
+                              className="tag is-small is-dark"
+                              style={{ fontSize: '0.65rem' }}
+                            >
+                              {m.movie.runtime}m
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Seen toggle */}
+                      <div
+                        onClick={(e) => onSeenClick(e, m.movie)}
+                        className={`seen is-size-7 ${seenState.hasSeen ? 'has-text-success' : 'has-text-grey-light'}`}
+                        style={{
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '0.15rem',
+                          padding: '0.5rem',
+                          minWidth: '50px',
+                        }}
+                        title={seenState.hasSeen ? 'Mark as unseen' : 'Mark as seen'}
+                      >
+                        <span className="is-size-7" style={{ fontWeight: 500 }}>
+                          {seenState.seenCount}
+                        </span>
+                        {seenState.hasSeen ? <Eye size={16} /> : <EyeClosed size={16} />}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+
+          <footer
+            className="modal-card-foot"
+            style={{
+              justifyContent: 'flex-end',
+              padding: '0.4rem 1rem',
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            <button
+              className="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+              }}
+            >
+              Close
+            </button>
+          </footer>
+        </div>
+      </div>
+
+      <MovieInfoModal
+        isOpen={selectedMovie !== null}
+        movie={selectedMovie}
+        onClose={() => setSelectedMovie(null)}
+      />
+    </>
+  )
+}

@@ -126,7 +126,11 @@ export default function NextMeetupCard({
           )}
         </div>
         {open && (
-          <MovieList list={list as MovieListAllWithFlags} onToggleSeenAction={onToggleSeenAction} />
+          <MovieList
+            list={list as MovieListAllWithFlags}
+            onToggleSeenAction={onToggleSeenAction}
+            showWatchedBadge={false}
+          />
         )}
       </div>
       <style jsx>{`

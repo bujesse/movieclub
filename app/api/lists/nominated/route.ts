@@ -24,7 +24,14 @@ export async function GET(req: NextRequest) {
       id: { in: listIds },
     },
     include: {
-      movies: true,
+      movies: {
+        include: {
+          movie: true,
+        },
+        orderBy: {
+          order: 'asc',
+        },
+      },
       votes: { where: { meetupId: nextMeetup.id } },
       nominations: { where: { meetupId: nextMeetup.id } },
     },
