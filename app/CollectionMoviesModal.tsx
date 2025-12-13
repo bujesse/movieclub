@@ -64,8 +64,15 @@ export default function CollectionMoviesModal({
   return (
     <>
       <div className="modal is-active">
-        <div className="modal-background" onClick={handleBackgroundClick} />
-        <div className="modal-card" style={{ width: '90%', maxWidth: '1000px', height: '90%' }}>
+        <div
+          className="modal-background"
+          style={{ cursor: 'default' }}
+          onClick={handleBackgroundClick}
+        />
+        <div
+          className="modal-card"
+          style={{ width: '90%', maxWidth: '1000px', height: '90%', cursor: 'default' }}
+        >
           <header
             className="modal-card-head"
             style={{ padding: '0.4rem 1rem', position: 'relative', zIndex: 1 }}
@@ -182,6 +189,22 @@ export default function CollectionMoviesModal({
                           {m.movie.title}
                         </div>
 
+                        {/* Year and runtime inline */}
+                        {(year || m.movie.runtime) && (
+                          <div
+                            style={{
+                              fontSize: '0.75rem',
+                              color: '#999',
+                              marginTop: '0.25rem',
+                            }}
+                          >
+                            {year}
+                            {year && m.movie.runtime && ' • '}
+                            {m.movie.runtime &&
+                              `${Math.floor(m.movie.runtime / 60)}h ${m.movie.runtime % 60}m`}
+                          </div>
+                        )}
+
                         {/* Badges */}
                         <div
                           style={{
@@ -191,14 +214,6 @@ export default function CollectionMoviesModal({
                             flexWrap: 'wrap',
                           }}
                         >
-                          {year && (
-                            <span
-                              className="tag is-small is-dark"
-                              style={{ fontSize: '0.65rem' }}
-                            >
-                              {year}
-                            </span>
-                          )}
                           {showClubBadge && m.movie.inMeetup && (
                             <span
                               className="tag is-small"
@@ -241,14 +256,6 @@ export default function CollectionMoviesModal({
                                 ⭐ {m.movie.oscarNominations}
                               </span>
                             )}
-                          {m.movie.runtime && (
-                            <span
-                              className="tag is-small is-dark"
-                              style={{ fontSize: '0.65rem' }}
-                            >
-                              {m.movie.runtime}m
-                            </span>
-                          )}
                         </div>
                       </div>
 

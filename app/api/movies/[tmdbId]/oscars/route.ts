@@ -38,6 +38,13 @@ export async function GET(
       where: { tmdbId },
       select: {
         releaseDate: true,
+        runtime: true,
+        directors: true,
+        actors: true,
+        genres: true,
+        originalLanguage: true,
+        voteAverage: true,
+        voteCount: true,
       },
     }),
   ])
@@ -45,5 +52,12 @@ export async function GET(
   return NextResponse.json({
     nominations,
     releaseDate: movie?.releaseDate ?? null,
+    runtime: movie?.runtime ?? null,
+    directors: movie?.directors ?? null,
+    actors: movie?.actors ?? null,
+    genres: movie?.genres ?? null,
+    originalLanguage: movie?.originalLanguage ?? null,
+    voteAverage: movie?.voteAverage ?? null,
+    voteCount: movie?.voteCount ?? null,
   })
 }

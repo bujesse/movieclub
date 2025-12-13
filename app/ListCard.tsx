@@ -474,15 +474,8 @@ export function MovieList({
                     </div>
                     <div className="movie-meta">
                       {m.releaseDate && <span>{new Date(m.releaseDate).getFullYear()}</span>}
-                      {m.directors && (m.directors as Array<TmdbCrew>).length > 0 && (
-                        <span> • </span>
-                      )}
-                      {m.directors && (m.directors as Array<TmdbCrew>).length > 0 && (
-                        <span>
-                          {(m.directors as Array<TmdbCrew>).map((d) => d.name).join(', ')}
-                        </span>
-                      )}
-                      {m.runtime && m.runtime > 0 && <div>{formatMinutes(m.runtime)}</div>}
+                      {m.releaseDate && m.runtime && m.runtime > 0 && <span> • </span>}
+                      {m.runtime && m.runtime > 0 && <span>{formatMinutes(m.runtime)}</span>}
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { GENRES } from '../types/tmdb'
 
 interface OscarNomination {
   ceremony: number
@@ -30,6 +31,12 @@ interface MovieInfoModalProps {
 export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModalProps) {
   const [nominations, setNominations] = useState<OscarNomination[]>([])
   const [releaseDate, setReleaseDate] = useState<string | null>(null)
+  const [runtime, setRuntime] = useState<number | null>(null)
+  const [directors, setDirectors] = useState<any>(null)
+  const [actors, setActors] = useState<any>(null)
+  const [genres, setGenres] = useState<any>(null)
+  const [voteAverage, setVoteAverage] = useState<number | null>(null)
+  const [voteCount, setVoteCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [viewingCeremony, setViewingCeremony] = useState<{
     ceremony: number
@@ -46,6 +53,12 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
     if (!isOpen || !movie) {
       setNominations([])
       setReleaseDate(null)
+      setRuntime(null)
+      setDirectors(null)
+      setActors(null)
+      setGenres(null)
+      setVoteAverage(null)
+      setVoteCount(null)
       setViewingCeremony(null)
       return
     }
@@ -58,6 +71,12 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
         const data = await res.json()
         setNominations(data.nominations || data)
         setReleaseDate(data.releaseDate || null)
+        setRuntime(data.runtime || null)
+        setDirectors(data.directors || null)
+        setActors(data.actors || null)
+        setGenres(data.genres || null)
+        setVoteAverage(data.voteAverage || null)
+        setVoteCount(data.voteCount || null)
       } catch (err) {
         console.error(err)
       } finally {
@@ -155,6 +174,73 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
         </header>
 
         <section className="modal-card-body">
+          {/* Basic Info */}
+          {(runtime || directors || actors || genres || voteAverage) && (
+            <div className="mb-4">
+              <h3
+                className="subtitle is-5 mb-3 has-text-weight-semibold"
+                style={{ color: '#48c78e' }}
+              >
+                Info
+              </h3>
+              <div
+                className="box"
+                style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '0.75rem' }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {/* Runtime */}
+                  {runtime && (
+                    <div>
+                      <span className="has-text-grey-light">Runtime:</span>{' '}
+                      <strong>{Math.floor(runtime / 60)}h {runtime % 60}m</strong>
+                    </div>
+                  )}
+
+                  {/* Directors */}
+                  {directors && Array.isArray(directors) && directors.length > 0 && (
+                    <div>
+                      <span className="has-text-grey-light">
+                        {directors.length > 1 ? 'Directors:' : 'Director:'}
+                      </span>{' '}
+                      <strong>{directors.map((d: any) => d.name).join(', ')}</strong>
+                    </div>
+                  )}
+
+                  {/* Cast */}
+                  {actors && Array.isArray(actors) && actors.length > 0 && (
+                    <div>
+                      <span className="has-text-grey-light">Cast:</span>{' '}
+                      <strong>{actors.slice(0, 5).map((a: any) => a.name).join(', ')}</strong>
+                    </div>
+                  )}
+
+                  {/* Genres */}
+                  {genres && Array.isArray(genres) && genres.length > 0 && (
+                    <div>
+                      <span className="has-text-grey-light">Genres:</span>{' '}
+                      <strong>
+                        {genres.map((g: number) => GENRES[g]).filter(Boolean).join(', ')}
+                      </strong>
+                    </div>
+                  )}
+
+                  {/* TMDB Rating */}
+                  {voteAverage && (
+                    <div>
+                      <span className="has-text-grey-light">TMDB Rating:</span>{' '}
+                      <strong>⭐ {voteAverage.toFixed(1)}/10</strong>
+                      {voteCount && (
+                        <span className="has-text-grey-light">
+                          {' '}({voteCount.toLocaleString()} votes)
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Budget & Box Office */}
           {(formatCurrency(movie.budget) || formatCurrency(movie.revenue)) && (
             <div className="mb-4">
