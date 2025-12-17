@@ -281,12 +281,12 @@ export default function CollectionCard({
               handleSync()
             }}
             disabled={syncPending}
-            title="Refresh from Letterboxd"
+            title="Refresh from Letterboxd and update movie details"
           >
             <span className="icon is-small">
               <RefreshCw size={16} className={syncPending ? 'rotating' : ''} />
             </span>
-            <span className="ml-2">{syncPending ? 'Syncing...' : 'Refresh'}</span>
+            <span className="ml-2">{syncPending ? 'Syncing...' : 'Sync'}</span>
           </button>
         )}
         {(wasCreatedByMe || isAdminMode) && (

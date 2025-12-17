@@ -51,8 +51,8 @@ model GlobalMovie {
   // Additional details from TMDb
   runtime           Int?
   popularity        Int?
-  budget            Int?
-  revenue           Int?
+  budget            BigInt?
+  revenue           BigInt?
   original_language String?
   directors         Json?
   actors            Json?

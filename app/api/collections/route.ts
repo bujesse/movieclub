@@ -7,28 +7,72 @@ import type { LetterboxdMovie } from '../../../types/collection'
 
 // GET all collections with enriched data
 export async function GET(req: NextRequest) {
-  const user = await getIdentityFromRequest(req)
-  if (!user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    const user = await getIdentityFromRequest(req)
+    if (!user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const collections = await prisma.collection.findMany({
-    include: {
-      movies: {
-        include: {
-          movie: true,
-        },
-        orderBy: {
-          order: 'asc',
+    console.log('[GET /api/collections] User:', user.email)
+
+    const collections = await prisma.collection.findMany({
+      include: {
+        movies: {
+          include: {
+            movie: true,
+          },
+          orderBy: {
+            order: 'asc',
+          },
         },
       },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  })
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
 
-  const enriched = await enrichCollections(collections, user.email)
+    console.log('[GET /api/collections] Found', collections.length, 'collections')
 
-  return NextResponse.json(enriched)
+    if (collections.length === 0) {
+      console.log('[GET /api/collections] No collections found in database')
+      return NextResponse.json([])
+    }
+
+    // Try to enrich, but return basic data if enrichment fails
+    try {
+      console.log('[GET /api/collections] Attempting to enrich collections...')
+      const enriched = await enrichCollections(collections, user.email)
+      console.log('[GET /api/collections] Successfully enriched', enriched.length, 'collections')
+      return NextResponse.json(enriched)
+    } catch (enrichError) {
+      console.error('[GET /api/collections] Enrichment failed, returning basic collection data:', enrichError)
+      // Return collections with basic structure even if enrichment fails
+      const basicCollections = collections.map((c) => ({
+        ...c,
+        movies: c.movies.map((m) => ({
+          ...m,
+          movie: {
+            ...m.movie,
+            seenBy: [],
+            seenCount: 0,
+            hasSeen: false,
+            inMeetup: false,
+            oscarNominations: 0,
+            oscarWins: 0,
+            oscarCategories: null,
+          },
+        })),
+        stats: {
+          userSeenCount: 0,
+          clubSeenCount: 0,
+          anyoneSeenCount: 0,
+        },
+      }))
+      console.log('[GET /api/collections] Returning', basicCollections.length, 'basic collections')
+      return NextResponse.json(basicCollections)
+    }
+  } catch (err: any) {
+    console.error('[GET /api/collections] Fatal error:', err)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
 }
 
 // POST - Create new collection (admin-only)
@@ -116,11 +160,27 @@ export async function POST(req: NextRequest) {
       })
     })
 
-    // Hydrate TMDB details in background (don't await)
+    // Hydrate TMDB details in background with rate limiting (max 5 requests/second)
     const tmdbIds = Array.from(new Set(collection.movies.map((m) => m.movie.tmdbId)))
-    Promise.allSettled(tmdbIds.map((id) => saveMovieDetails(id)))
-      .then(() => console.log(`Hydrated ${tmdbIds.length} movies for collection ${collection.id}`))
-      .catch((err) => console.error('Error hydrating movie details:', err))
+    ;(async () => {
+      console.log(`Starting to hydrate ${tmdbIds.length} movies for new collection ${collection.id}`)
+      let successCount = 0
+      let errorCount = 0
+
+      for (const tmdbId of tmdbIds) {
+        try {
+          await saveMovieDetails(tmdbId)
+          successCount++
+        } catch (err) {
+          errorCount++
+          console.error(`Failed to hydrate movie ${tmdbId}:`, err)
+        }
+        // Rate limit: 5 requests per second = 200ms delay between requests
+        await new Promise(resolve => setTimeout(resolve, 200))
+      }
+
+      console.log(`Hydration complete for collection ${collection.id}: ${successCount} success, ${errorCount} errors`)
+    })().catch((err) => console.error('Error hydrating movie details:', err))
 
     // Re-fetch with updated details
     const updatedCollection = await prisma.collection.findUnique({

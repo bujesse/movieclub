@@ -102,11 +102,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       })
     })
 
-    // Hydrate TMDB details in background (don't await)
+    // Hydrate TMDB details in background with rate limiting (max 5 requests/second)
     const tmdbIds = Array.from(new Set(updated.movies.map((m) => m.movie.tmdbId)))
-    Promise.allSettled(tmdbIds.map((id) => saveMovieDetails(id)))
-      .then(() => console.log(`Hydrated ${tmdbIds.length} movies for collection ${collectionId}`))
-      .catch((err) => console.error('Error hydrating movie details:', err))
+    ;(async () => {
+      console.log(`Starting to hydrate ${tmdbIds.length} movies for collection ${collectionId}`)
+      let successCount = 0
+      let errorCount = 0
+
+      for (const tmdbId of tmdbIds) {
+        try {
+          await saveMovieDetails(tmdbId)
+          successCount++
+        } catch (err) {
+          errorCount++
+          console.error(`Failed to hydrate movie ${tmdbId}:`, err)
+        }
+        // Rate limit: 5 requests per second = 200ms delay between requests
+        await new Promise(resolve => setTimeout(resolve, 200))
+      }
+
+      console.log(`Hydration complete for collection ${collectionId}: ${successCount} success, ${errorCount} errors`)
+    })().catch((err) => console.error('Error hydrating movie details:', err))
 
     // Re-fetch with updated details
     const refreshedCollection = await prisma.collection.findUnique({

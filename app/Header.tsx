@@ -22,6 +22,7 @@ export default function Header() {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [isFixingMovies, setIsFixingMovies] = useState(false)
   const toggleMenu = () => setIsMenuOpen((v) => !v)
 
   // Prevent hydration mismatch by only showing dynamic content after mount
@@ -40,6 +41,29 @@ export default function Header() {
       router.push(homeUrl)
     }
     setFilter(ListFilter.Voted)
+  }
+
+  const handleFixBrokenMovies = async () => {
+    if (!confirm('This will hydrate all movies with missing TMDB details. Continue?')) {
+      return
+    }
+
+    setIsFixingMovies(true)
+    try {
+      const res = await fetch('/api/admin/fix-broken-movies', { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || 'Failed to fix movies')
+        return
+      }
+      const data = await res.json()
+      alert(`Started fixing ${data.movieCount} broken movies. This will take about ${Math.ceil(data.movieCount / 5)} seconds. Check the console for progress.`)
+    } catch (err) {
+      console.error('Fix broken movies error:', err)
+      alert('Failed to start fix process')
+    } finally {
+      setIsFixingMovies(false)
+    }
   }
 
   // Close menu when clicking outside
@@ -182,6 +206,18 @@ export default function Header() {
                 suppressHydrationWarning
               >
                 Admin {isAdminMode ? 'ON' : 'OFF'}
+              </button>
+            )}
+
+            {/* fix broken movies button (admin only) */}
+            {isAdminMode && (
+              <button
+                className="button is-small is-warning"
+                onClick={handleFixBrokenMovies}
+                disabled={isFixingMovies}
+                title="Hydrate all movies with missing TMDB details"
+              >
+                {isFixingMovies ? 'Fixing...' : '🔧 Fix Broken Movies'}
               </button>
             )}
 

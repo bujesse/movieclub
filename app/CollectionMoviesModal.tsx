@@ -4,26 +4,9 @@ import { useState } from 'react'
 import { tmdbImage } from '../lib/tmdb'
 import { Eye, EyeClosed, X as XIcon } from 'lucide-react'
 import MovieInfoModal from './MovieInfoModal'
+import { EnrichedCollection } from '../types/collection'
 
-type Movie = {
-  id: number
-  order: number
-  movie: {
-    tmdbId: number
-    title: string
-    releaseDate: Date | null
-    posterPath: string | null
-    runtime: number | null
-    oscarNominations: number
-    oscarWins: number
-    oscarCategories: Record<string, { nominations: number; wins: number }> | null
-    budget?: number | null
-    revenue?: number | null
-    seenCount: number
-    hasSeen: boolean
-    inMeetup: boolean
-  }
-}
+type Movie = EnrichedCollection['movies'][number]
 
 type CollectionMoviesModalProps = {
   isOpen: boolean
