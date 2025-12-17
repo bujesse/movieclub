@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { prisma } from '../../../../lib/prisma'
+import '../../../../lib/bigintSerializer'
 
 // DELETE a comment (only own comments or admin)
 export async function DELETE(req: NextRequest, { params }: { params: any }) {

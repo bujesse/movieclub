@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getIdentityFromRequest } from '../../../../../lib/cfAccess'
 import { prisma } from '../../../../../lib/prisma'
+import '../../../../../lib/bigintSerializer'
 
 // GET all comments for a list
 export async function GET(req: NextRequest, { params }: { params: any }) {

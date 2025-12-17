@@ -5,6 +5,7 @@ import { getIdentityFromRequest } from '../../../lib/cfAccess'
 import { enrichLists } from '../../../lib/enrichLists'
 import { getNextMeetupWithoutList } from '../../../lib/dbHelpers'
 import { saveMovieDetails } from '../../../lib/tmdb'
+import '../../../lib/bigintSerializer'
 
 // GET movie lists not associated with a meetup,
 // Sorted by current votes desc, all-time votes desc, createdAt asc

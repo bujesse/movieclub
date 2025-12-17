@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getIdentity } from '../../../../lib/cfAccess'
 import { pickMovieJob } from '../../../../lib/pickMovieJob'
+import '../../../../lib/bigintSerializer'
 
 export async function POST() {
   const me = await getIdentity()

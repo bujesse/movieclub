@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { prisma } from '../../../../lib/prisma'
 import { saveMovieDetails } from '../../../../lib/tmdb'
+import '../../../../lib/bigintSerializer'
 
 // POST - Fix all movies with missing TMDB details (admin only)
 export async function POST(req: NextRequest) {
@@ -29,11 +30,7 @@ export async function POST(req: NextRequest) {
 
     // Filter for movies with missing critical fields
     const brokenMovies = allMovies.filter(
-      (m) =>
-        m.actors === null ||
-        m.directors === null ||
-        m.genres === null ||
-        m.runtime === null
+      (m) => m.actors === null || m.directors === null || m.genres === null || m.runtime === null
     )
 
     console.log(`Found ${brokenMovies.length} movies with missing details`)

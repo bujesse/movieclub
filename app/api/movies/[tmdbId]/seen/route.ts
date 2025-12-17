@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../../../lib/prisma'
 import { getIdentityFromRequest } from '../../../../../lib/cfAccess'
+import '../../../../../lib/bigintSerializer'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ tmdbId: string }> }) {
   const user = await getIdentityFromRequest(req)

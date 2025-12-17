@@ -4,6 +4,7 @@ import { getIdentityFromRequest } from '../../../lib/cfAccess'
 import { enrichCollections } from '../../../lib/enrichCollections'
 import { saveMovieDetails } from '../../../lib/tmdb'
 import type { LetterboxdMovie } from '../../../types/collection'
+import '../../../lib/bigintSerializer'
 
 // GET all collections with enriched data
 export async function GET(req: NextRequest) {
@@ -43,7 +44,10 @@ export async function GET(req: NextRequest) {
       console.log('[GET /api/collections] Successfully enriched', enriched.length, 'collections')
       return NextResponse.json(enriched)
     } catch (enrichError) {
-      console.error('[GET /api/collections] Enrichment failed, returning basic collection data:', enrichError)
+      console.error(
+        '[GET /api/collections] Enrichment failed, returning basic collection data:',
+        enrichError
+      )
       // Return collections with basic structure even if enrichment fails
       const basicCollections = collections.map((c) => ({
         ...c,
@@ -163,7 +167,9 @@ export async function POST(req: NextRequest) {
     // Hydrate TMDB details in background with rate limiting (max 5 requests/second)
     const tmdbIds = Array.from(new Set(collection.movies.map((m) => m.movie.tmdbId)))
     ;(async () => {
-      console.log(`Starting to hydrate ${tmdbIds.length} movies for new collection ${collection.id}`)
+      console.log(
+        `Starting to hydrate ${tmdbIds.length} movies for new collection ${collection.id}`
+      )
       let successCount = 0
       let errorCount = 0
 
@@ -176,10 +182,12 @@ export async function POST(req: NextRequest) {
           console.error(`Failed to hydrate movie ${tmdbId}:`, err)
         }
         // Rate limit: 5 requests per second = 200ms delay between requests
-        await new Promise(resolve => setTimeout(resolve, 200))
+        await new Promise((resolve) => setTimeout(resolve, 200))
       }
 
-      console.log(`Hydration complete for collection ${collection.id}: ${successCount} success, ${errorCount} errors`)
+      console.log(
+        `Hydration complete for collection ${collection.id}: ${successCount} success, ${errorCount} errors`
+      )
     })().catch((err) => console.error('Error hydrating movie details:', err))
 
     // Re-fetch with updated details

@@ -3,6 +3,7 @@ import { prisma } from '../../../../lib/prisma'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { enrichLists } from '../../../../lib/enrichLists'
 import { getPastMeetupLists } from '../../../../lib/dbHelpers'
+import '../../../../lib/bigintSerializer'
 
 // GET movie lists associated with past meetups (archive)
 export async function GET(req: NextRequest) {

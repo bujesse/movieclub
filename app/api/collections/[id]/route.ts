@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { prisma } from '../../../../lib/prisma'
 import { enrichCollections } from '../../../../lib/enrichCollections'
+import '../../../../lib/bigintSerializer'
 
 // GET single collection
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

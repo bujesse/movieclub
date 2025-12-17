@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TMDB_BASE_URL } from '../../../../lib/tmdb'
+import '../../../../lib/bigintSerializer'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getIdentityFromRequest } from '../../../../../lib/cfAccess'
 import { prisma } from '../../../../../lib/prisma'
 import { getNextMeetupWithoutList } from '../../../../../lib/dbHelpers'
+import '../../../../../lib/bigintSerializer'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getIdentityFromRequest(req)

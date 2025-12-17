@@ -10,7 +10,12 @@ import FilterSortControls from '../FilterSortControls'
 import { useListsPage } from '../ListsPageContext'
 import { MovieListAllWithFlags } from '../page'
 import { withDuplicateFlags } from '../../lib/listHelpers'
-import { useToggleSeen, useFilterAndSort, useScrollToTopOnChange, useURLSync } from '../hooks/useMovieLists'
+import {
+  useToggleSeen,
+  useFilterAndSort,
+  useScrollToTopOnChange,
+  useURLSync,
+} from '../hooks/useMovieLists'
 import { ROUTES } from '../../lib/routes'
 import { ListSort } from '../../types/lists'
 

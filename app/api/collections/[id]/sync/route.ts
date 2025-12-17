@@ -4,6 +4,7 @@ import { prisma } from '../../../../../lib/prisma'
 import { enrichCollections } from '../../../../../lib/enrichCollections'
 import { saveMovieDetails } from '../../../../../lib/tmdb'
 import type { LetterboxdMovie } from '../../../../../types/collection'
+import '../../../../../lib/bigintSerializer'
 
 // POST - Sync collection from Letterboxd
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -118,10 +119,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           console.error(`Failed to hydrate movie ${tmdbId}:`, err)
         }
         // Rate limit: 5 requests per second = 200ms delay between requests
-        await new Promise(resolve => setTimeout(resolve, 200))
+        await new Promise((resolve) => setTimeout(resolve, 200))
       }
 
-      console.log(`Hydration complete for collection ${collectionId}: ${successCount} success, ${errorCount} errors`)
+      console.log(
+        `Hydration complete for collection ${collectionId}: ${successCount} success, ${errorCount} errors`
+      )
     })().catch((err) => console.error('Error hydrating movie details:', err))
 
     // Re-fetch with updated details

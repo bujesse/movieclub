@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { getMeetupMovieTmdbIds } from '../../../../lib/dbHelpers'
+import '../../../../lib/bigintSerializer'
 
 export async function GET(req: NextRequest) {
   const user = await getIdentityFromRequest(req)

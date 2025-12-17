@@ -3,6 +3,7 @@ import { getIdentityFromRequest } from '../../../../../lib/cfAccess'
 import { prisma } from '../../../../../lib/prisma'
 import { MAX_VOTES } from '../../../../../lib/config'
 import { getNextMeetupWithoutList } from '../../../../../lib/dbHelpers'
+import '../../../../../lib/bigintSerializer'
 
 export async function POST(req: NextRequest, { params }: { params: any }) {
   const id = await getIdentityFromRequest(req)

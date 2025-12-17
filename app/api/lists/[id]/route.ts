@@ -6,6 +6,7 @@ import { normalizeMovies } from '../../../../lib/helpers'
 import { saveMovieDetails } from '../../../../lib/tmdb'
 import { getNextMeetupWithoutList } from '../../../../lib/dbHelpers'
 import { enrichLists } from '../../../../lib/enrichLists'
+import '../../../../lib/bigintSerializer'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // Auth

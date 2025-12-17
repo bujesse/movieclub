@@ -1,22 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { EnrichedCollection } from '../../types/collection'
 import CollectionCard from '../CollectionCard'
 import CreateCollectionModal from '../CreateCollectionModal'
 import { useCurrentUser } from '../CurrentUserProvider'
 
-export default function CollectionsClient({
-  initialCollections,
-}: {
-  initialCollections: EnrichedCollection[]
-}) {
+export default function CollectionsClient() {
   const router = useRouter()
   const { isAdminMode } = useCurrentUser()
-  const [collections, setCollections] = useState<EnrichedCollection[]>(initialCollections)
+
+  const [collections, setCollections] = useState<EnrichedCollection[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [pending, setPending] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/collections')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setCollections(data))
+      .finally(() => setLoading(false))
+  }, [])
 
   const handleCreate = async (payload: {
     name: string
@@ -81,9 +86,10 @@ export default function CollectionsClient({
       </div>
 
       <div className="container">
-
-        {collections.length === 0 ? (
-          <div className="notification is-info is-light">
+        {loading ? (
+          <div className="notification">Loading…</div>
+        ) : collections.length === 0 ? (
+          <div className="notification is-info">
             <p>No collections yet. {isAdminMode && 'Create one to get started!'}</p>
           </div>
         ) : (

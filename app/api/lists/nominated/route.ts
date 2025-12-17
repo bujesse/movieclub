@@ -3,6 +3,7 @@ import { prisma } from '../../../../lib/prisma'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { enrichLists } from '../../../../lib/enrichLists'
 import { getNextMeetupWithoutList } from '../../../../lib/dbHelpers'
+import '../../../../lib/bigintSerializer'
 
 export async function GET(req: NextRequest) {
   const user = await getIdentityFromRequest(req)
