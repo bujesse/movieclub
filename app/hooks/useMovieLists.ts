@@ -56,8 +56,9 @@ export function useScrollToTopOnChange(filter: ListFilter, sortBy: ListSort) {
  * Hook that syncs filter and sort state with URL query parameters
  * Call this hook in pages that support filter/sort to enable URL persistence
  * Returns isReady flag that indicates when URL sync is complete
+ * @param defaultSort - The default sort to use when no URL param is present (defaults to ListSort.Default)
  */
-export function useURLSync() {
+export function useURLSync(defaultSort: ListSort = ListSort.Default) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -74,12 +75,12 @@ export function useURLSync() {
 
     const newSort = Object.values(ListSort).includes(urlSort as ListSort)
       ? (urlSort as ListSort)
-      : ListSort.Default
+      : defaultSort
 
     updateFromURL(newFilter, newSort)
     // Mark as ready after state is updated
     setIsReady(true)
-  }, [updateFromURL, setIsReady, searchParams])
+  }, [updateFromURL, setIsReady, searchParams, defaultSort])
 
   // Update URL when filter or sort changes (only if ready)
   useEffect(() => {
@@ -93,7 +94,7 @@ export function useURLSync() {
       params.delete('filter')
     }
 
-    if (sortBy !== ListSort.Default) {
+    if (sortBy !== defaultSort) {
       params.set('sort', sortBy)
     } else {
       params.delete('sort')
@@ -102,7 +103,7 @@ export function useURLSync() {
     const queryString = params.toString()
     const url = queryString ? `${pathname}?${queryString}` : pathname
     router.replace(url, { scroll: false })
-  }, [filter, sortBy, pathname, router, searchParams, isReady])
+  }, [filter, sortBy, pathname, router, searchParams, isReady, defaultSort])
 
   // Sync with URL changes (e.g., browser back/forward)
   useEffect(() => {
@@ -117,12 +118,12 @@ export function useURLSync() {
 
     const newSort = Object.values(ListSort).includes(urlSort as ListSort)
       ? (urlSort as ListSort)
-      : ListSort.Default
+      : defaultSort
 
     if (newFilter !== filter || newSort !== sortBy) {
       updateFromURL(newFilter, newSort)
     }
-  }, [searchParams, isReady])
+  }, [searchParams, isReady, defaultSort])
 
   return { isReady }
 }

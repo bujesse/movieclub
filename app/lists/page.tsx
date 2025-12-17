@@ -12,6 +12,7 @@ import { MovieListAllWithFlags } from '../page'
 import { withDuplicateFlags } from '../../lib/listHelpers'
 import { useToggleSeen, useFilterAndSort, useScrollToTopOnChange, useURLSync } from '../hooks/useMovieLists'
 import { ROUTES } from '../../lib/routes'
+import { ListSort } from '../../types/lists'
 
 function AllListsPageContent() {
   const [lists, setLists] = useState<MovieListAllWithFlags[]>([])
@@ -25,8 +26,8 @@ function AllListsPageContent() {
   const { user } = useCurrentUser()
   const { filter, sortBy, setFilter, setSortBy } = useListsPage()
 
-  // Enable URL persistence for filters and sorting
-  const { isReady } = useURLSync()
+  // Enable URL persistence for filters and sorting with CreatedDesc as default
+  const { isReady } = useURLSync(ListSort.CreatedDesc)
 
   const onToggleSeen = useToggleSeen(setLists)
   useScrollToTopOnChange(filter, sortBy)

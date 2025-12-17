@@ -14,7 +14,11 @@ import { useToggleSeen, useFilterAndSort, useScrollToTopOnChange, useURLSync } f
 
 export type MovieListAll = Prisma.MovieListGetPayload<{
   include: {
-    movies: true
+    movies: {
+      include: {
+        movie: true
+      }
+    }
     votes: true
   }
 }>
@@ -22,7 +26,7 @@ export type MovieListAll = Prisma.MovieListGetPayload<{
 export type MovieListAllWithFlags = Omit<MovieListAll, 'movies'> & {
   votesTotal: number
   commentCount: number
-  movies: (MovieListAll['movies'][number] & {
+  movies: (MovieListAll['movies'][number]['movie'] & {
     inMultipleLists: boolean
     listCount: number
     seenBy: string[]

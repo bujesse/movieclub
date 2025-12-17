@@ -45,7 +45,7 @@ export default function CollectionCard({
 
   // Helper to get seen state (with optimistic updates)
   const getSeenState = (tmdbId: number) => {
-    const movie = collection.movies.find((m) => m.movie.tmdbId === tmdbId)?.movie
+    const movie = collection.movies.find((m) => m.movie.tmdbId === tmdbId)?.movie as EnrichedCollection['movies'][number]['movie'] | undefined
     if (!movie) return { hasSeen: false, seenCount: 0 }
 
     return movieSeenState[tmdbId] || {
@@ -62,7 +62,7 @@ export default function CollectionCard({
   }
 
   // Adjust stats based on movieSeenState changes
-  collection.movies.forEach((m) => {
+  collection.movies.forEach((m: EnrichedCollection['movies'][number]) => {
     const optimisticState = movieSeenState[m.movie.tmdbId]
     if (optimisticState) {
       const originalHasSeen = m.movie.hasSeen
@@ -127,7 +127,7 @@ export default function CollectionCard({
     }
   }
 
-  const handleSeenClick = async (e: React.MouseEvent, movie: any) => {
+  const handleSeenClick = async (e: React.MouseEvent, movie: EnrichedCollection['movies'][number]['movie']) => {
     e.preventDefault()
     e.stopPropagation()
 

@@ -4,16 +4,40 @@ import React, { createContext, useContext } from 'react'
 import { POLLS_CLOSE_DAYS_BEFORE } from '../lib/config'
 import { isBefore, subDays } from 'date-fns'
 
-type NextMeetup = Prisma.MeetupGetPayload<{
+type MeetupBase = Prisma.MeetupGetPayload<{
   include: {
     movieList: {
       include: {
-        movies: true
+        movies: {
+          include: {
+            movie: true
+          }
+        }
         votes: true
       }
     }
   }
-}> | null
+}>
+
+type MovieListBase = NonNullable<MeetupBase['movieList']>
+
+type EnrichedMovieList = Omit<MovieListBase, 'movies'> & {
+  votesTotal: number
+  commentCount: number
+  movies: (MovieListBase['movies'][number]['movie'] & {
+    seenBy: string[]
+    seenCount: number
+    hasSeen: boolean
+    inMeetup: boolean
+    oscarNominations: number
+    oscarWins: number
+    oscarCategories: Record<string, { nominations: number; wins: number }> | null
+  })[]
+}
+
+type NextMeetup = (Omit<MeetupBase, 'movieList'> & {
+  movieList: EnrichedMovieList | null
+}) | null
 
 const NextMeetupCtx = createContext<NextMeetup>(null)
 

@@ -170,7 +170,7 @@ export default function CollectionMoviesModal({
                         }}
                       >
                         <img
-                          src={tmdbImage(m.movie.posterPath, 'w92')}
+                          src={tmdbImage(m.movie.posterPath, 'w200')}
                           alt={m.movie.title}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />

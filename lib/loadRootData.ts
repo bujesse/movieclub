@@ -29,9 +29,9 @@ export async function loadRootData(meEmail?: string | null) {
   if (!picked) return { nextMeetup: null, voteCount: 0 }
 
   const enrichedMovieList =
-    meEmail && picked.movieList
-      ? (await enrichLists([picked.movieList], meEmail))[0]
-      : picked.movieList
+    picked.movieList
+      ? (await enrichLists([picked.movieList], meEmail))[0] as any
+      : null
 
   const voteCount =
     withoutListRaw && meEmail && !withoutListRaw.movieList
