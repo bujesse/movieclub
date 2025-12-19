@@ -12,6 +12,13 @@ export async function enrichLists<
   // Fetch movies that have been in meetups
   const meetupMovieTmdbIds = await getMeetupMovieTmdbIds(prisma)
 
+  // Fetch movies that appear in any collection
+  const collectionMovieRows = await prisma.collectionMovie.findMany({
+    where: { movie: { tmdbId: { in: tmdbIds } } },
+    select: { movie: { select: { tmdbId: true } } },
+  })
+  const collectionMovieTmdbIds = new Set(collectionMovieRows.map((row) => row.movie.tmdbId))
+
   // Fetch "seen" data
   const seenRows = await prisma.seen.findMany({
     where: { tmdbId: { in: tmdbIds } },
@@ -84,6 +91,7 @@ export async function enrichLists<
         seenCount: seenBy.length,
         hasSeen: mySeen.has(m.movie.tmdbId),
         inMeetup: meetupMovieTmdbIds.has(m.movie.tmdbId),
+        inCollection: collectionMovieTmdbIds.has(m.movie.tmdbId),
         // Oscar fields
         oscarNominations: oscarData?.totalNominations ?? 0,
         oscarWins: oscarData?.totalWins ?? 0,

@@ -19,6 +19,13 @@ type CollectionMoviesModalProps = {
   showClubBadge?: boolean
 }
 
+type SeenFilter =
+  | 'all'
+  | 'seen-by-me'
+  | 'not-seen-by-you'
+  | 'not-seen-by-anyone'
+  | 'in-movie-list'
+
 export default function CollectionMoviesModal({
   isOpen,
   onClose,
@@ -31,6 +38,7 @@ export default function CollectionMoviesModal({
 }: CollectionMoviesModalProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMovie, setSelectedMovie] = useState<any | null>(null)
+  const [seenFilter, setSeenFilter] = useState<SeenFilter>('all')
 
   const handleBackgroundClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -39,10 +47,28 @@ export default function CollectionMoviesModal({
 
   if (!isOpen) return null
 
-  // Filter movies by search query
-  const filteredMovies = movies.filter((m) =>
-    m.movie.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Filter movies by search query and seen filter
+  const filteredMovies = movies.filter((m) => {
+    // First apply search query filter
+    const matchesSearch = m.movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+    if (!matchesSearch) return false
+
+    // Then apply seen filter
+    const seenState = getSeenState(m.movie.tmdbId)
+    switch (seenFilter) {
+      case 'seen-by-me':
+        return seenState.hasSeen
+      case 'not-seen-by-you':
+        return !seenState.hasSeen
+      case 'not-seen-by-anyone':
+        return seenState.seenCount === 0
+      case 'in-movie-list':
+        return m.movie.inUnscheduledList
+      case 'all':
+      default:
+        return true
+    }
+  })
 
   return (
     <>
@@ -103,6 +129,40 @@ export default function CollectionMoviesModal({
                   </span>
                 )}
               </div>
+            </div>
+
+            {/* Seen filter buttons */}
+            <div className="buttons has-addons is-centered" style={{ marginBottom: '0.5rem' }}>
+              <button
+                className={`button is-small ${seenFilter === 'all' ? 'is-info is-selected' : ''}`}
+                onClick={() => setSeenFilter('all')}
+              >
+                All
+              </button>
+              <button
+                className={`button is-small ${seenFilter === 'seen-by-me' ? 'is-info is-selected' : ''}`}
+                onClick={() => setSeenFilter('seen-by-me')}
+              >
+                Seen by me
+              </button>
+              <button
+                className={`button is-small ${seenFilter === 'not-seen-by-you' ? 'is-info is-selected' : ''}`}
+                onClick={() => setSeenFilter('not-seen-by-you')}
+              >
+                Not seen by me
+              </button>
+              <button
+                className={`button is-small ${seenFilter === 'not-seen-by-anyone' ? 'is-info is-selected' : ''}`}
+                onClick={() => setSeenFilter('not-seen-by-anyone')}
+              >
+                Not seen by anyone
+              </button>
+              <button
+                className={`button is-small ${seenFilter === 'in-movie-list' ? 'is-info is-selected' : ''}`}
+                onClick={() => setSeenFilter('in-movie-list')}
+              >
+                In movie list
+              </button>
             </div>
             {filteredMovies.length === 0 ? (
               <div className="has-text-centered has-text-grey">No movies found</div>
@@ -207,6 +267,19 @@ export default function CollectionMoviesModal({
                               }}
                             >
                               CLUB
+                            </span>
+                          )}
+                          {showClubBadge && m.movie.inUnscheduledList && !m.movie.inMeetup && (
+                            <span
+                              className="tag is-small"
+                              style={{
+                                background: '#3e8ed0',
+                                color: 'white',
+                                fontSize: '0.65rem',
+                              }}
+                              title="In a list with no meetup yet"
+                            >
+                              IN LIST
                             </span>
                           )}
                           {showOscarBadges && m.movie.oscarWins > 0 && (

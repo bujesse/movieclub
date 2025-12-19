@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import { getMeetupMovieTmdbIds } from './dbHelpers'
+import { getMeetupMovieTmdbIds, getUnscheduledMovieListTmdbIds } from './dbHelpers'
 
 export async function enrichCollections<
   T extends {
@@ -13,6 +13,9 @@ export async function enrichCollections<
 
   // Fetch movies that have been in meetups
   const meetupMovieTmdbIds = await getMeetupMovieTmdbIds(prisma)
+
+  // Fetch movies that are in lists without meetups
+  const unscheduledMovieTmdbIds = await getUnscheduledMovieListTmdbIds(prisma)
 
   // Fetch "seen" data
   const seenRows = await prisma.seen.findMany({
@@ -66,6 +69,7 @@ export async function enrichCollections<
           seenCount: seenBy.length,
           hasSeen: mySeen.has(m.movie.tmdbId),
           inMeetup: meetupMovieTmdbIds.has(m.movie.tmdbId),
+          inUnscheduledList: unscheduledMovieTmdbIds.has(m.movie.tmdbId),
           oscarNominations: oscarData?.totalNominations ?? 0,
           oscarWins: oscarData?.totalWins ?? 0,
           oscarCategories: oscarData?.categoryBreakdown ?? null,

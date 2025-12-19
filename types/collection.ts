@@ -17,6 +17,7 @@ export type EnrichedCollection = CollectionWithMovies & {
       seenCount: number
       hasSeen: boolean
       inMeetup: boolean
+      inUnscheduledList: boolean
       oscarNominations: number
       oscarWins: number
       oscarCategories: Record<string, { nominations: number; wins: number }> | null

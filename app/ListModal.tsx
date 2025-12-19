@@ -217,7 +217,7 @@ export default function ListModal({
                                     fontWeight: 'bold',
                                   }}
                                 >
-                                  ✓ Watched
+                                  CLUB
                                 </span>
                               )}
                             </p>

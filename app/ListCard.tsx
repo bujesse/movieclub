@@ -459,7 +459,25 @@ export function MovieList({
                             fontWeight: 'bold',
                           }}
                         >
-                          ✓ Watched
+                          CLUB
+                        </span>
+                      )}
+
+                      {m.inCollection && (
+                        <span
+                          className="tag"
+                          title="In a collection"
+                          aria-label="In a collection"
+                          style={{
+                            fontSize: '0.7rem',
+                            padding: '0.15rem 0.4rem',
+                            height: 'auto',
+                            background: '#3e8ed0',
+                            color: 'white',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          COLLECTION
                         </span>
                       )}
 

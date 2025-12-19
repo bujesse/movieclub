@@ -28,6 +28,11 @@ interface MovieInfoModalProps {
   onClose: () => void
 }
 
+type MovieMemberships = {
+  lists: { id: number; title: string }[]
+  collections: { id: number; name: string; isGlobal: boolean }[]
+}
+
 export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModalProps) {
   const [nominations, setNominations] = useState<OscarNomination[]>([])
   const [releaseDate, setReleaseDate] = useState<string | null>(null)
@@ -37,7 +42,9 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
   const [genres, setGenres] = useState<any>(null)
   const [voteAverage, setVoteAverage] = useState<number | null>(null)
   const [voteCount, setVoteCount] = useState<number | null>(null)
+  const [memberships, setMemberships] = useState<MovieMemberships | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingMemberships, setLoadingMemberships] = useState(false)
   const [viewingCeremony, setViewingCeremony] = useState<{
     ceremony: number
     category: string
@@ -60,6 +67,8 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
       setVoteAverage(null)
       setVoteCount(null)
       setViewingCeremony(null)
+      setMemberships(null)
+      setLoadingMemberships(false)
       return
     }
 
@@ -85,6 +94,23 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
     }
 
     fetchNominations()
+
+    const fetchMemberships = async () => {
+      setLoadingMemberships(true)
+      try {
+        const res = await fetch(`/api/movies/${movie.tmdbId}/memberships`)
+        if (!res.ok) throw new Error('Failed to fetch memberships')
+        const data = await res.json()
+        setMemberships(data)
+      } catch (err) {
+        console.error(err)
+        setMemberships(null)
+      } finally {
+        setLoadingMemberships(false)
+      }
+    }
+
+    fetchMemberships()
   }, [isOpen, movie])
 
   if (!isOpen || !movie) return null
@@ -116,7 +142,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
 
   // Helper to format currency
   const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount || amount === 0) return null
+    if (amount == null || amount <= 0) return null
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -125,13 +151,18 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
     }).format(amount)
   }
 
+  const hasBudget = typeof movie.budget === 'number' && movie.budget > 0
+  const hasRevenue = typeof movie.revenue === 'number' && movie.revenue > 0
+
   // Calculate profit/loss metrics
   const getFinancialMetrics = () => {
-    if (!movie.budget || !movie.revenue || movie.budget === 0) return null
+    if (!hasBudget || !hasRevenue) return null
 
-    const profit = movie.revenue - movie.budget
-    const roi = (profit / movie.budget) * 100
-    const multiplier = movie.revenue / movie.budget
+    const budget = movie.budget as number
+    const revenue = movie.revenue as number
+    const profit = revenue - budget
+    const roi = (profit / budget) * 100
+    const multiplier = revenue / budget
 
     return { profit, roi, multiplier }
   }
@@ -149,6 +180,12 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
     }
     groupedByClass[nom.class].push(nom)
   })
+
+  const showMembershipsPane =
+    loadingMemberships ||
+    (memberships !== null &&
+      (memberships.lists.length + memberships.collections.length > 1 ||
+        (memberships.lists.length > 0 && memberships.collections.length > 0)))
 
   return (
     <div className="modal is-active">
@@ -241,8 +278,74 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
             </div>
           )}
 
+          {showMembershipsPane && (
+            <div className="mb-4">
+              <h3
+                className="subtitle is-5 mb-3 has-text-weight-semibold"
+                style={{ color: '#48c78e' }}
+              >
+                Appears In
+              </h3>
+              <div
+                className="box"
+                style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '0.75rem' }}
+              >
+                {loadingMemberships ? (
+                  <p className="has-text-grey">Loading lists and collections...</p>
+                ) : memberships ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
+                      <span className="has-text-grey-light">Lists:</span>
+                      {memberships.lists.length === 0 ? (
+                        <span className="has-text-grey-light"> None</span>
+                      ) : (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.35rem',
+                            marginTop: '0.35rem',
+                          }}
+                        >
+                          {memberships.lists.map((list) => (
+                            <span key={list.id} className="tag is-dark is-small">
+                              {list.title}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="has-text-grey-light">Collections:</span>
+                      {memberships.collections.length === 0 ? (
+                        <span className="has-text-grey-light"> None</span>
+                      ) : (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.35rem',
+                            marginTop: '0.35rem',
+                          }}
+                        >
+                          {memberships.collections.map((collection) => (
+                            <span key={collection.id} className="tag is-dark is-small">
+                              {collection.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="has-text-grey">No list or collection data available.</p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Budget & Box Office */}
-          {(formatCurrency(movie.budget) || formatCurrency(movie.revenue)) && (
+          {(hasBudget || hasRevenue) && (
             <div className="mb-4">
               <h3
                 className="subtitle is-5 mb-3 has-text-weight-semibold"
@@ -256,7 +359,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {/* Budget */}
-                  {formatCurrency(movie.budget) && (
+                  {hasBudget && formatCurrency(movie.budget) && (
                     <div>
                       <span className="has-text-grey-light">Budget:</span>{' '}
                       <strong className="is-size-5">{formatCurrency(movie.budget)}</strong>
@@ -264,7 +367,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                   )}
 
                   {/* Box Office */}
-                  {formatCurrency(movie.revenue) && (
+                  {hasRevenue && formatCurrency(movie.revenue) && (
                     <div>
                       <span className="has-text-grey-light">Box Office:</span>{' '}
                       <strong className="is-size-5">{formatCurrency(movie.revenue)}</strong>

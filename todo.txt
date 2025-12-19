@@ -1,25 +1,21 @@
 # Features
 
+* Ordering of collections
+* Don't focus the search box when opening list
 * import "seen" data from letterboxd - data export has watched.csv - https://letterboxd.com/settings/data/
 * when locking in movie list, create the next meetup object if doesn't exist
-* read receipts for comments
-* Collections
-    * create lists (top x of y, genre based, director based, actor based, decade based, etc)
-    * lists like "oscar movies", "imdb top 250 movies of all time"
-    * import lists from external sources (letterboxd, imdb, etc)
-        * need to save down the LB url path - <https://letterboxd.com>/iiremkaara/list/imdb-top-250/
-            * then fetch from https://letterboxd-list-radarr.onrender.com/iiremkaara/list/imdb-top-250/
-        * then parse out the tmdb ids, fetchh metadata from TMDB, then save to our db
-    * should have "i've seen, group has seen, anyone in the club has seen"
-        * graphic should be 3 radial progress bars
-    * Collections list for criterion collection
-* collections - be able to have comments on each movie in the collection (store in CollectionMovie join table)
+* be able to search for year in the typeahead
 * Show more data by clicking movie
     * popularity - create some sort of "obscurity" score
 * add clear button for sorting and filtering
+* read receipts for comments
+* Collections
+    * allow users to create and import collections
+    * be able to have comments on each movie in the collection (store in CollectionMovie join table)
 
-* oscar season
-    * separate page that has all oscar nominated movies and a checklist, specific to each user, and a group checklist, and can break down who has seen what
+## code cleanup
+* have ai take a look at everywhere a custom style is used, and see if it can be cleaned up or made generic
+
 * add dev admin ability to edit/delete all lists, edit dates
 * Other awards:
     * https://letterboxd.com/awards_season/list/awards-season-2024-2025/ - check comments
@@ -35,7 +31,6 @@
     * most popular decades
     * maybe have a look at letterboxd
 
-* idea: every time a new list takes the lead, record that, and be able to show a timeline of how the lead changed
 * idea: swipe left or right to navigate between lists on the list detail page
 
 # Bugs

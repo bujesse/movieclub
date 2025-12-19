@@ -33,6 +33,7 @@ export type MovieListAllWithFlags = Omit<MovieListAll, 'movies'> & {
     seenCount: number
     hasSeen: boolean
     inMeetup: boolean
+    inCollection: boolean
     oscarNominations: number
     oscarWins: number
     oscarCategories: Record<string, { nominations: number; wins: number }> | null

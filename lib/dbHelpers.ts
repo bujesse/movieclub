@@ -137,3 +137,31 @@ export async function getMeetupMovieTmdbIds(tx: Tx): Promise<Set<number>> {
 
   return new Set(junctionEntries.map((entry) => entry.movie.tmdbId))
 }
+
+export async function getUnscheduledMovieListTmdbIds(tx: Tx): Promise<Set<number>> {
+  // Get lists that are not tied to any meetup yet
+  const listRows = await tx.movieList.findMany({
+    where: { Meetup: { is: null } },
+    select: { id: true },
+  })
+
+  if (listRows.length === 0) return new Set()
+
+  const movieListIds = listRows.map((row) => row.id)
+
+  // Query junction table and join with GlobalMovie to get tmdbIds
+  const junctionEntries = await tx.movieListMovie.findMany({
+    where: {
+      movieListId: { in: movieListIds },
+    },
+    include: {
+      movie: {
+        select: {
+          tmdbId: true,
+        },
+      },
+    },
+  })
+
+  return new Set(junctionEntries.map((entry) => entry.movie.tmdbId))
+}
