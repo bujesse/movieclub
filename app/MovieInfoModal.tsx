@@ -299,12 +299,12 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                       {memberships.lists.length === 0 ? (
                         <span className="has-text-grey-light"> None</span>
                       ) : (
-                        <div
+                        <span
                           style={{
-                            display: 'flex',
+                            display: 'inline-flex',
                             flexWrap: 'wrap',
                             gap: '0.35rem',
-                            marginTop: '0.35rem',
+                            marginLeft: '0.5rem',
                           }}
                         >
                           {memberships.lists.map((list) => (
@@ -312,7 +312,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                               {list.title}
                             </span>
                           ))}
-                        </div>
+                        </span>
                       )}
                     </div>
                     <div>
@@ -320,12 +320,12 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                       {memberships.collections.length === 0 ? (
                         <span className="has-text-grey-light"> None</span>
                       ) : (
-                        <div
+                        <span
                           style={{
-                            display: 'flex',
+                            display: 'inline-flex',
                             flexWrap: 'wrap',
                             gap: '0.35rem',
-                            marginTop: '0.35rem',
+                            marginLeft: '0.5rem',
                           }}
                         >
                           {memberships.collections.map((collection) => (
@@ -333,7 +333,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                               {collection.name}
                             </span>
                           ))}
-                        </div>
+                        </span>
                       )}
                     </div>
                   </div>
