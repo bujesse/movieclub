@@ -241,7 +241,9 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                   {runtime && (
                     <div>
                       <span className="has-text-grey-light">Runtime:</span>{' '}
-                      <strong>{Math.floor(runtime / 60)}h {runtime % 60}m</strong>
+                      <strong>
+                        {Math.floor(runtime / 60)}h {runtime % 60}m
+                      </strong>
                     </div>
                   )}
 
@@ -259,7 +261,12 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                   {actors && Array.isArray(actors) && actors.length > 0 && (
                     <div>
                       <span className="has-text-grey-light">Cast:</span>{' '}
-                      <strong>{actors.slice(0, 5).map((a: any) => a.name).join(', ')}</strong>
+                      <strong>
+                        {actors
+                          .slice(0, 5)
+                          .map((a: any) => a.name)
+                          .join(', ')}
+                      </strong>
                     </div>
                   )}
 
@@ -268,7 +275,10 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                     <div>
                       <span className="has-text-grey-light">Genres:</span>{' '}
                       <strong>
-                        {genres.map((g: number) => GENRES[g]).filter(Boolean).join(', ')}
+                        {genres
+                          .map((g: number) => GENRES[g])
+                          .filter(Boolean)
+                          .join(', ')}
                       </strong>
                     </div>
                   )}
@@ -280,7 +290,8 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                       <strong>⭐ {voteAverage.toFixed(1)}/10</strong>
                       {voteCount && (
                         <span className="has-text-grey-light">
-                          {' '}({voteCount.toLocaleString()} votes)
+                          {' '}
+                          ({voteCount.toLocaleString()} votes)
                         </span>
                       )}
                     </div>
@@ -467,11 +478,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
 
           {loading ? (
             <p className="has-text-centered">Loading details...</p>
-          ) : movie.oscarNominations === 0 && movie.oscarWins === 0 ? (
-            <div className="has-text-centered has-text-grey">
-              <p>No Academy Award nominations or wins for this movie.</p>
-            </div>
-          ) : (
+          ) : movie.oscarNominations === 0 && movie.oscarWins === 0 ? null : (
             <div>
               {/* Awards */}
               <h3
