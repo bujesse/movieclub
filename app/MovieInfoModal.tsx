@@ -22,8 +22,8 @@ interface MovieInfoModalProps {
     oscarNominations: number
     oscarWins: number
     oscarCategories: Record<string, { nominations: number; wins: number }> | null
-    budget?: number | null
-    revenue?: number | null
+    budget?: number | string | bigint | null
+    revenue?: number | string | bigint | null
   } | null
   onClose: () => void
 }
@@ -151,15 +151,27 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
     }).format(amount)
   }
 
-  const hasBudget = typeof movie.budget === 'number' && movie.budget > 0
-  const hasRevenue = typeof movie.revenue === 'number' && movie.revenue > 0
+  const toNumber = (value: number | string | bigint | null | undefined) => {
+    if (value == null) return null
+    if (typeof value === 'bigint') return Number(value)
+    if (typeof value === 'string') {
+      const parsed = Number(value)
+      return Number.isFinite(parsed) ? parsed : null
+    }
+    return Number.isFinite(value) ? value : null
+  }
+
+  const budgetValue = toNumber(movie.budget)
+  const revenueValue = toNumber(movie.revenue)
+  const hasBudget = budgetValue !== null && budgetValue > 0
+  const hasRevenue = revenueValue !== null && revenueValue > 0
 
   // Calculate profit/loss metrics
   const getFinancialMetrics = () => {
     if (!hasBudget || !hasRevenue) return null
 
-    const budget = movie.budget as number
-    const revenue = movie.revenue as number
+    const budget = budgetValue as number
+    const revenue = revenueValue as number
     const profit = revenue - budget
     const roi = (profit / budget) * 100
     const multiplier = revenue / budget
@@ -359,18 +371,18 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {/* Budget */}
-                  {hasBudget && formatCurrency(movie.budget) && (
+                  {hasBudget && formatCurrency(budgetValue) && (
                     <div>
                       <span className="has-text-grey-light">Budget:</span>{' '}
-                      <strong className="is-size-5">{formatCurrency(movie.budget)}</strong>
+                      <strong className="is-size-5">{formatCurrency(budgetValue)}</strong>
                     </div>
                   )}
 
                   {/* Box Office */}
-                  {hasRevenue && formatCurrency(movie.revenue) && (
+                  {hasRevenue && formatCurrency(revenueValue) && (
                     <div>
                       <span className="has-text-grey-light">Box Office:</span>{' '}
-                      <strong className="is-size-5">{formatCurrency(movie.revenue)}</strong>
+                      <strong className="is-size-5">{formatCurrency(revenueValue)}</strong>
                     </div>
                   )}
 
