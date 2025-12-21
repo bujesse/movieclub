@@ -1,12 +1,9 @@
 # Features
 
-* Ordering of collections
-* Don't focus the search box when opening list
+* add daily sync, but only sync movies that have changed since last sync
 * import "seen" data from letterboxd - data export has watched.csv - https://letterboxd.com/settings/data/
-* when locking in movie list, create the next meetup object if doesn't exist
-* be able to search for year in the typeahead
-* Show more data by clicking movie
-    * popularity - create some sort of "obscurity" score
+* Ordering of collections
+* popularity - create some sort of "obscurity" score
 * add clear button for sorting and filtering
 * read receipts for comments
 * Collections
@@ -16,7 +13,7 @@
 ## code cleanup
 * have ai take a look at everywhere a custom style is used, and see if it can be cleaned up or made generic
 
-* add dev admin ability to edit/delete all lists, edit dates
+* edit dates
 * Other awards:
     * https://letterboxd.com/awards_season/list/awards-season-2024-2025/ - check comments
     * Golden Globes

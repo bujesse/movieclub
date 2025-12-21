@@ -17,10 +17,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id: idParam } = await params
   const movieListId = Number(idParam)
 
-  // Esnure the list exists and was created by this user
+  // Ensure the list exists and was created by this user
   const list = await prisma.movieList.findUnique({ where: { id: movieListId } })
   if (!list) return NextResponse.json({ error: 'List not found' }, { status: 404 })
-  if (list.createdBy !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (list.createdBy !== userId && !user.isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   try {
     const { title, description, movies } = await req.json()
@@ -127,17 +129,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!list) {
     return NextResponse.json({ error: 'List not found' }, { status: 404 })
   }
-  if (list.createdBy !== userId) {
+  if (list.createdBy !== userId && !user.isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Check if the list has a nomination with votes from other users
   const nextMeetup = await getNextMeetupWithoutList(prisma)
   if (nextMeetup) {
+    const nominationUserId = user.isAdmin ? list.createdBy : userId
     const nomination = await prisma.nomination.findFirst({
       where: {
         movieListId,
-        userId,
+        userId: nominationUserId,
         meetupId: nextMeetup.id,
       },
     })
@@ -147,7 +150,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         where: {
           movieListId,
           meetupId: nextMeetup.id,
-          userId: { not: userId },
+          userId: { not: nominationUserId },
         },
       })
 

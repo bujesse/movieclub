@@ -47,7 +47,7 @@ export default function ListCard({ list, actions, display, voting, nomination }:
   const hideAdminActions = display?.hideAdminActions ?? false
   const isLocked = display?.isLocked ?? false
   const showVoteTags = display?.showVoteTags ?? false
-  const { user } = useCurrentUser()
+  const { user, isAdminMode } = useCurrentUser()
   const myEmail = user!.email
   const { canVote } = useVotes()
   const router = useRouter()
@@ -260,7 +260,7 @@ export default function ListCard({ list, actions, display, voting, nomination }:
           </span>
           <span className="ml-2">{commentCount}</span>
         </button>
-        {!isArchiveView && !hideAdminActions && wasCreatedByMe && (
+        {!isArchiveView && !hideAdminActions && (wasCreatedByMe || isAdminMode) && (
           <>
             <button
               className="card-footer-item button has-text-link"
@@ -463,11 +463,11 @@ export function MovieList({
                         </span>
                       )}
 
-                      {m.inCollection && (
+                      {m.inCollectionCount > 0 && (
                         <span
                           className="tag"
-                          title="In a collection"
-                          aria-label="In a collection"
+                          title={`In ${m.inCollectionCount} collection${m.inCollectionCount === 1 ? '' : 's'}`}
+                          aria-label={`In ${m.inCollectionCount} collection${m.inCollectionCount === 1 ? '' : 's'}`}
                           style={{
                             fontSize: '0.7rem',
                             padding: '0.15rem 0.4rem',
@@ -477,7 +477,7 @@ export function MovieList({
                             fontWeight: 'bold',
                           }}
                         >
-                          COLLECTION
+                          📁 {m.inCollectionCount}
                         </span>
                       )}
 

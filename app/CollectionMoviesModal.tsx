@@ -19,12 +19,7 @@ type CollectionMoviesModalProps = {
   showClubBadge?: boolean
 }
 
-type SeenFilter =
-  | 'all'
-  | 'seen-by-me'
-  | 'not-seen-by-you'
-  | 'not-seen-by-anyone'
-  | 'in-movie-list'
+type SeenFilter = 'all' | 'seen-by-me' | 'not-seen-by-you' | 'not-seen-by-anyone' | 'in-movie-list'
 
 export default function CollectionMoviesModal({
   isOpen,
@@ -117,7 +112,6 @@ export default function CollectionMoviesModal({
                   placeholder="Search movies..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
                 />
                 {searchQuery && (
                   <span
