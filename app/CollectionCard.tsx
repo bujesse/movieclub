@@ -35,6 +35,11 @@ export default function CollectionCard({
   const [syncPending, setSyncPending] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMoviesModalOpen, setIsMoviesModalOpen] = useState(false)
+  const letterboxdUrl = collection.letterboxdUrl
+    ? collection.letterboxdUrl.startsWith('http')
+      ? collection.letterboxdUrl
+      : `https://letterboxd.com/${collection.letterboxdUrl.replace(/^\/+/, '')}`
+    : null
 
   // Track seen state locally for optimistic updates
   const [movieSeenState, setMovieSeenState] = useState<
@@ -185,6 +190,17 @@ export default function CollectionCard({
             <p className="mb-2">{collection.name}</p>
             {collection.description && (
               <p className="is-size-7 has-text-grey-light">{collection.description}</p>
+            )}
+            {letterboxdUrl && (
+              <a
+                className="is-size-7"
+                href={letterboxdUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View on Letterboxd
+              </a>
             )}
           </div>
         </div>
