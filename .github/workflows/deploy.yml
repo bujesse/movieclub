@@ -42,6 +42,22 @@ jobs:
           echo "CF_ACCESS_AUD=${{ secrets.CF_ACCESS_AUD }}" >> .env
           echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" >> .env
 
+      - name: Backup database
+        env:
+          MOVIECLUB_DATA_DIR: ${{ secrets.MOVIECLUB_DATA_DIR }}
+        run: |
+          set -euo pipefail
+          db_dir="${MOVIECLUB_DATA_DIR}"
+          db_path="${db_dir}/movieclub.db"
+          if [ -f "$db_path" ]; then
+            ts="$(date +'%Y%m%d_%H%M%S')"
+            backup_path="${db_dir}/movieclub.db.bak_${ts}"
+            cp "$db_path" "$backup_path"
+            echo "Database backup created at $backup_path"
+          else
+            echo "No database found at $db_path, skipping backup."
+          fi
+
       - name: Stop old stack
         run: docker compose -f docker-compose.prod.yml down
 
