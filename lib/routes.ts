@@ -4,6 +4,7 @@ export const ROUTES = {
   COLLECTIONS: '/collections',
   ARCHIVE: '/archive',
   HOW_IT_WORKS: '/how-it-works',
+  ADMIN_MEETUPS: '/admin/meetups',
 } as const
 
 export type Route = (typeof ROUTES)[keyof typeof ROUTES]

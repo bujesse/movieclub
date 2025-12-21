@@ -4,11 +4,13 @@ type Tx = PrismaClient | Prisma.TransactionClient
 
 export async function getNextMeetupWithList(tx: Tx) {
   const nowIso = new Date().toISOString()
+  const normalizedDateSql =
+    `CASE WHEN typeof(date) = 'integer' THEN datetime(date / 1000, 'unixepoch') ELSE datetime(date) END`
   const rows = await tx.$queryRawUnsafe<{ id: number; date: string; movieListId: number }[]>(
     `SELECT id, date, movieListId
      FROM "Meetup"
-     WHERE movieListId IS NOT NULL AND datetime(date) > datetime(?)
-     ORDER BY datetime(date) ASC
+     WHERE movieListId IS NOT NULL AND ${normalizedDateSql} > datetime(?)
+     ORDER BY ${normalizedDateSql} ASC
      LIMIT 1`,
     nowIso
   )
@@ -41,11 +43,13 @@ export async function getNextMeetupWithList(tx: Tx) {
 
 export async function getNextMeetupWithoutList(tx: Tx) {
   const nowIso = new Date().toISOString()
+  const normalizedDateSql =
+    `CASE WHEN typeof(date) = 'integer' THEN datetime(date / 1000, 'unixepoch') ELSE datetime(date) END`
   const rows = await tx.$queryRawUnsafe<{ id: number; date: string; movieListId: number | null }[]>(
     `SELECT id, date, movieListId
      FROM "Meetup"
-     WHERE movieListId IS NULL AND datetime(date) > datetime(?)
-     ORDER BY datetime(date) ASC
+     WHERE movieListId IS NULL AND ${normalizedDateSql} > datetime(?)
+     ORDER BY ${normalizedDateSql} ASC
      LIMIT 1`,
     nowIso
   )
@@ -75,11 +79,13 @@ export async function getNextMeetupWithoutList(tx: Tx) {
 
 export async function getPastMeetupLists(tx: Tx) {
   const nowIso = new Date().toISOString()
+  const normalizedDateSql =
+    `CASE WHEN typeof(date) = 'integer' THEN datetime(date / 1000, 'unixepoch') ELSE datetime(date) END`
   const rows = await tx.$queryRawUnsafe<{ id: number; movieListId: number }[]>(
     `SELECT id, movieListId
      FROM "Meetup"
-     WHERE movieListId IS NOT NULL AND datetime(date) < datetime(?)
-     ORDER BY datetime(date) DESC`,
+     WHERE movieListId IS NOT NULL AND ${normalizedDateSql} < datetime(?)
+     ORDER BY ${normalizedDateSql} DESC`,
     nowIso
   )
 

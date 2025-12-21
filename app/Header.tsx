@@ -7,7 +7,12 @@ import FilterSortControls from './FilterSortControls'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useListsPage } from './ListsPageContext'
 import { ListFilter } from '../types/lists'
-import { ROUTES, isActiveRoute, shouldShowFilterControls, buildRouteWithParams } from '../lib/routes'
+import {
+  ROUTES,
+  isActiveRoute,
+  shouldShowFilterControls,
+  buildRouteWithParams,
+} from '../lib/routes'
 
 export default function Header() {
   const { usedVotes, maxVotes } = useVotes()
@@ -35,6 +40,7 @@ export default function Header() {
   const listsUrl = buildRouteWithParams(ROUTES.LISTS, searchParams)
   const collectionsUrl = ROUTES.COLLECTIONS
   const archiveUrl = buildRouteWithParams(ROUTES.ARCHIVE, searchParams)
+  const adminMeetupsUrl = ROUTES.ADMIN_MEETUPS
 
   const handleVotesBadgeClick = () => {
     if (!isActiveRoute(pathname, ROUTES.HOME)) {
@@ -57,7 +63,9 @@ export default function Header() {
         return
       }
       const data = await res.json()
-      alert(`Started fixing ${data.movieCount} broken movies. This will take about ${Math.ceil(data.movieCount / 5)} seconds. Check the console for progress.`)
+      alert(
+        `Started fixing ${data.movieCount} broken movies. This will take about ${Math.ceil(data.movieCount / 5)} seconds. Check the console for progress.`
+      )
     } catch (err) {
       console.error('Fix broken movies error:', err)
       alert('Failed to start fix process')
@@ -165,6 +173,14 @@ export default function Header() {
           >
             Archive
           </a>
+          {isAdminMode && (
+            <a
+              className={`navbar-item ${isActiveRoute(pathname, ROUTES.ADMIN_MEETUPS) ? 'is-active' : ''}`}
+              href={adminMeetupsUrl}
+            >
+              Meetups
+            </a>
+          )}
           <a
             className={`navbar-item ${isActiveRoute(pathname, ROUTES.HOW_IT_WORKS) ? 'is-active' : ''}`}
             href={ROUTES.HOW_IT_WORKS}
@@ -194,6 +210,18 @@ export default function Header() {
               gap: '0.75rem',
             }}
           >
+            {/* fix broken movies button (admin only) */}
+            {isAdminMode && (
+              <button
+                className="button is-small is-warning"
+                onClick={handleFixBrokenMovies}
+                disabled={isFixingMovies}
+                title="Hydrate all movies with missing TMDB details"
+              >
+                {isFixingMovies ? 'Fixing...' : '🔧 Fix Broken Movies'}
+              </button>
+            )}
+
             {/* username as non-link tag */}
             {display && <span className="tag is-small">Logged in: {display}</span>}
 
@@ -206,18 +234,6 @@ export default function Header() {
                 suppressHydrationWarning
               >
                 Admin {isAdminMode ? 'ON' : 'OFF'}
-              </button>
-            )}
-
-            {/* fix broken movies button (admin only) */}
-            {isAdminMode && (
-              <button
-                className="button is-small is-warning"
-                onClick={handleFixBrokenMovies}
-                disabled={isFixingMovies}
-                title="Hydrate all movies with missing TMDB details"
-              >
-                {isFixingMovies ? 'Fixing...' : '🔧 Fix Broken Movies'}
               </button>
             )}
 
