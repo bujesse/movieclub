@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { GENRES } from '../types/tmdb'
 
 interface OscarNomination {
   ceremony: number
@@ -29,7 +28,7 @@ interface MovieInfoModalProps {
 }
 
 type MovieMemberships = {
-  lists: { id: number; title: string }[]
+  lists: { id: number; title: string; isPastMeetup: boolean }[]
   collections: { id: number; name: string; isGlobal: boolean }[]
 }
 
@@ -39,7 +38,6 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
   const [runtime, setRuntime] = useState<number | null>(null)
   const [directors, setDirectors] = useState<any>(null)
   const [actors, setActors] = useState<any>(null)
-  const [genres, setGenres] = useState<any>(null)
   const [voteAverage, setVoteAverage] = useState<number | null>(null)
   const [voteCount, setVoteCount] = useState<number | null>(null)
   const [memberships, setMemberships] = useState<MovieMemberships | null>(null)
@@ -63,7 +61,6 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
       setRuntime(null)
       setDirectors(null)
       setActors(null)
-      setGenres(null)
       setVoteAverage(null)
       setVoteCount(null)
       setViewingCeremony(null)
@@ -83,7 +80,6 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
         setRuntime(data.runtime || null)
         setDirectors(data.directors || null)
         setActors(data.actors || null)
-        setGenres(data.genres || null)
         setVoteAverage(data.voteAverage || null)
         setVoteCount(data.voteCount || null)
       } catch (err) {
@@ -200,9 +196,26 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
         (memberships.lists.length > 0 && memberships.collections.length > 0)))
 
   return (
-    <div className="modal is-active">
-      <div className="modal-background" onClick={onClose} />
-      <div className="modal-card" style={{ maxWidth: '700px' }}>
+    <div
+      className="modal is-active"
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
+    >
+      <div
+        className="modal-background"
+        onClick={(e) => {
+          e.stopPropagation()
+          onClose()
+        }}
+      />
+      <div
+        className="modal-card"
+        style={{ maxWidth: '700px' }}
+        onClick={(e) => {
+          e.stopPropagation()
+        }}
+      >
         <header
           className="modal-card-head"
           style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}
@@ -224,7 +237,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
 
         <section className="modal-card-body">
           {/* Basic Info */}
-          {(runtime || directors || actors || genres || voteAverage) && (
+          {(runtime || directors || actors || voteAverage) && (
             <div className="mb-4">
               <h3
                 className="subtitle is-5 mb-3 has-text-weight-semibold"
@@ -270,18 +283,6 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                     </div>
                   )}
 
-                  {/* Genres */}
-                  {genres && Array.isArray(genres) && genres.length > 0 && (
-                    <div>
-                      <span className="has-text-grey-light">Genres:</span>{' '}
-                      <strong>
-                        {genres
-                          .map((g: number) => GENRES[g])
-                          .filter(Boolean)
-                          .join(', ')}
-                      </strong>
-                    </div>
-                  )}
 
                   {/* TMDB Rating */}
                   {voteAverage && (
@@ -331,7 +332,20 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                           }}
                         >
                           {memberships.lists.map((list) => (
-                            <span key={list.id} className="tag is-dark is-small">
+                            <span
+                              key={list.id}
+                              className={`tag is-small ${list.isPastMeetup ? '' : 'is-dark'}`}
+                              style={
+                                list.isPastMeetup
+                                  ? {
+                                      background: '#48c78e',
+                                      color: 'white',
+                                      fontWeight: 'bold',
+                                    }
+                                  : undefined
+                              }
+                              title={list.isPastMeetup ? 'Past meetup list' : undefined}
+                            >
                               {list.title}
                             </span>
                           ))}

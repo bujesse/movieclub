@@ -652,7 +652,8 @@ function PosterCarousel({
     }
   }, [posters.length, intervalMs])
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
     if (posters.length <= 1) return
 
     if (timerRef.current) {

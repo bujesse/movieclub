@@ -111,7 +111,12 @@ export default function CommentModal({
   if (!isOpen) return null
 
   return (
-    <div className="modal is-active">
+    <div
+      className="modal is-active"
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
+    >
       <div
         className="modal-background"
         onClick={(e) => {
@@ -119,7 +124,13 @@ export default function CommentModal({
           onClose()
         }}
       />
-      <div className="modal-card" style={{ maxWidth: '600px' }}>
+      <div
+        className="modal-card"
+        style={{ maxWidth: '600px' }}
+        onClick={(e) => {
+          e.stopPropagation()
+        }}
+      >
         <header className="modal-card-head">
           <p className="modal-card-title">Comments: {listTitle}</p>
           <button

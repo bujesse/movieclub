@@ -21,7 +21,13 @@ export async function GET(
       where: { movie: { tmdbId } },
       select: {
         movieList: {
-          select: { id: true, title: true },
+          select: {
+            id: true,
+            title: true,
+            Meetup: {
+              select: { date: true },
+            },
+          },
         },
       },
     }),
@@ -35,8 +41,13 @@ export async function GET(
     }),
   ])
 
+  const now = new Date()
   const lists = listRows
-    .map((row) => row.movieList)
+    .map((row) => {
+      const meetupDate = row.movieList.Meetup?.date ?? null
+      const isPastMeetup = meetupDate ? meetupDate < now : false
+      return { id: row.movieList.id, title: row.movieList.title, isPastMeetup }
+    })
     .sort((a, b) => a.title.localeCompare(b.title))
   const collections = collectionRows
     .map((row) => row.collection)
