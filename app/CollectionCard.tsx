@@ -2,19 +2,15 @@
 
 import { useState } from 'react'
 import { EnrichedCollection } from '../types/collection'
-import { tmdbImage } from '../lib/tmdb'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
-import { RefreshCw } from 'lucide-react'
-import { formatDistanceToNowStrict } from 'date-fns'
 import RadialStats from './RadialStats'
-import EditCollectionModal from './EditCollectionModal'
+import CollectionModal, { CollectionPayload } from './CollectionModal'
 import CollectionMoviesModal from './CollectionMoviesModal'
 
 type CollectionCardProps = {
   collection: EnrichedCollection
   onDelete: (id: number) => void
-  onSync: (id: number) => void
   onEdit: (id: number, updatedCollection: EnrichedCollection) => void
   showOscarBadges?: boolean
 }
@@ -22,7 +18,6 @@ type CollectionCardProps = {
 export default function CollectionCard({
   collection,
   onDelete,
-  onSync,
   onEdit,
   showOscarBadges = true,
 }: CollectionCardProps) {
@@ -32,14 +27,8 @@ export default function CollectionCard({
 
   const [pending, setPending] = useState(false)
   const [areYouSure, setAreYouSure] = useState(false)
-  const [syncPending, setSyncPending] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMoviesModalOpen, setIsMoviesModalOpen] = useState(false)
-  const letterboxdUrl = collection.letterboxdUrl
-    ? collection.letterboxdUrl.startsWith('http')
-      ? collection.letterboxdUrl
-      : `https://letterboxd.com/${collection.letterboxdUrl.replace(/^\/+/, '')}`
-    : null
 
   // Track seen state locally for optimistic updates
   const [movieSeenState, setMovieSeenState] = useState<
@@ -50,13 +39,17 @@ export default function CollectionCard({
 
   // Helper to get seen state (with optimistic updates)
   const getSeenState = (tmdbId: number) => {
-    const movie = collection.movies.find((m) => m.movie.tmdbId === tmdbId)?.movie as EnrichedCollection['movies'][number]['movie'] | undefined
+    const movie = collection.movies.find((m) => m.movie.tmdbId === tmdbId)?.movie as
+      | EnrichedCollection['movies'][number]['movie']
+      | undefined
     if (!movie) return { hasSeen: false, seenCount: 0 }
 
-    return movieSeenState[tmdbId] || {
-      hasSeen: movie.hasSeen,
-      seenCount: movie.seenCount,
-    }
+    return (
+      movieSeenState[tmdbId] || {
+        hasSeen: movie.hasSeen,
+        seenCount: movie.seenCount,
+      }
+    )
   }
 
   // Calculate updated stats based on optimistic state
@@ -116,23 +109,10 @@ export default function CollectionCard({
     }
   }
 
-  const handleSync = async () => {
-    setSyncPending(true)
-    try {
-      const res = await fetch(`/api/collections/${collection.id}/sync`, { method: 'POST' })
-      if (!res.ok) {
-        const data = await res.json()
-        alert(data.error || 'Failed to sync collection')
-        return
-      }
-      onSync(collection.id)
-      router.refresh()
-    } finally {
-      setSyncPending(false)
-    }
-  }
-
-  const handleSeenClick = async (e: React.MouseEvent, movie: EnrichedCollection['movies'][number]['movie']) => {
+  const handleSeenClick = async (
+    e: React.MouseEvent,
+    movie: EnrichedCollection['movies'][number]['movie']
+  ) => {
     e.preventDefault()
     e.stopPropagation()
 
@@ -160,7 +140,7 @@ export default function CollectionCard({
     router.refresh()
   }
 
-  const handleEdit = async (payload: { name: string; description: string }) => {
+  const handleEdit = async (payload: CollectionPayload) => {
     try {
       const res = await fetch(`/api/collections/${collection.id}`, {
         method: 'PUT',
@@ -190,17 +170,6 @@ export default function CollectionCard({
             <p className="mb-2">{collection.name}</p>
             {collection.description && (
               <p className="is-size-7 has-text-grey-light">{collection.description}</p>
-            )}
-            {letterboxdUrl && (
-              <a
-                className="is-size-7"
-                href={letterboxdUrl}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                View on Letterboxd
-              </a>
             )}
           </div>
         </div>
@@ -240,7 +209,7 @@ export default function CollectionCard({
                   }}
                 />
                 <span className="is-size-7">
-                  Group has seen it: <strong>{updatedStats.clubSeenCount}</strong>
+                  Club has seen it: <strong>{updatedStats.clubSeenCount}</strong>
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -269,42 +238,13 @@ export default function CollectionCard({
                   Anyone has seen it: <strong>{updatedStats.anyoneSeenCount}</strong>
                 </span>
               </div>
-              {collection.lastSyncedAt && (
-                <div
-                  className="is-size-7 has-text-grey"
-                  style={{ marginTop: '0.5rem' }}
-                  suppressHydrationWarning
-                >
-                  Synced{' '}
-                  {formatDistanceToNowStrict(new Date(collection.lastSyncedAt), {
-                    addSuffix: true,
-                  })}
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
 
-
       {/* Footer actions */}
       <footer className="card-footer">
-        {(wasCreatedByMe || isAdminMode) && (
-          <button
-            className="card-footer-item button is-light"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleSync()
-            }}
-            disabled={syncPending}
-            title="Refresh from Letterboxd and update movie details"
-          >
-            <span className="icon is-small">
-              <RefreshCw size={16} className={syncPending ? 'rotating' : ''} />
-            </span>
-            <span className="ml-2">{syncPending ? 'Syncing...' : 'Sync'}</span>
-          </button>
-        )}
         {(wasCreatedByMe || isAdminMode) && (
           <button
             className="card-footer-item button has-text-link"
@@ -340,28 +280,13 @@ export default function CollectionCard({
         showOscarBadges={showOscarBadges}
       />
 
-      <EditCollectionModal
+      <CollectionModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onSubmit={handleEdit}
-        initialName={collection.name}
-        initialDescription={collection.description || ''}
+        mode="edit"
+        initialCollection={collection}
       />
-
-      <style jsx>{`
-        @keyframes rotate {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        :global(.rotating) {
-          animation: rotate 1s linear infinite;
-        }
-      `}</style>
     </div>
   )
 }

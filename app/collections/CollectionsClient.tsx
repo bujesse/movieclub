@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { EnrichedCollection } from '../../types/collection'
 import CollectionCard from '../CollectionCard'
-import CreateCollectionModal from '../CreateCollectionModal'
+import CollectionModal, { CollectionPayload } from '../CollectionModal'
 import { useCurrentUser } from '../CurrentUserProvider'
 
 export default function CollectionsClient() {
@@ -23,12 +23,7 @@ export default function CollectionsClient() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleCreate = async (payload: {
-    name: string
-    description: string
-    letterboxdUrl: string
-    isGlobal: boolean
-  }) => {
+  const handleCreate = async (payload: CollectionPayload) => {
     setPending(true)
     try {
       const res = await fetch('/api/collections', {
@@ -59,11 +54,6 @@ export default function CollectionsClient() {
     setCollections((prev) => prev.filter((c) => c.id !== id))
   }
 
-  const handleSync = () => {
-    // Just refresh the page to get updated data
-    router.refresh()
-  }
-
   const handleEdit = (id: number, updatedCollection: EnrichedCollection) => {
     // Update the collection in local state
     setCollections((prev) => prev.map((c) => (c.id === id ? updatedCollection : c)))
@@ -73,7 +63,7 @@ export default function CollectionsClient() {
     <section className="section collections-section">
       <div className="container has-text-centered mb-5">
         <h2 className="title">Collections</h2>
-        <p className="subtitle">Curated movie collections from Letterboxd</p>
+        <p className="subtitle">Curated movie collections</p>
         {isAdminMode && (
           <button
             className="button is-primary"
@@ -99,7 +89,6 @@ export default function CollectionsClient() {
                 <CollectionCard
                   collection={collection}
                   onDelete={handleDelete}
-                  onSync={handleSync}
                   onEdit={handleEdit}
                 />
               </div>
@@ -108,7 +97,7 @@ export default function CollectionsClient() {
         )}
       </div>
 
-      <CreateCollectionModal
+      <CollectionModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreate}

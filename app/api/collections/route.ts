@@ -3,7 +3,7 @@ import { prisma } from '../../../lib/prisma'
 import { getIdentityFromRequest } from '../../../lib/cfAccess'
 import { enrichCollections } from '../../../lib/enrichCollections'
 import { saveMovieDetails } from '../../../lib/tmdb'
-import type { LetterboxdMovie } from '../../../types/collection'
+import { normalizeMovies } from '../../../lib/helpers'
 import '../../../lib/bigintSerializer'
 
 // GET all collections with enriched data
@@ -87,39 +87,19 @@ export async function POST(req: NextRequest) {
 
     // TODO: Add admin check when admin system is implemented
     // if (!user.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const isAdmin = user.isAdmin
 
-    const { name, description, letterboxdUrl, isGlobal } = await req.json()
+    const { name, description, isGlobal, movies } = await req.json()
 
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-    if (!letterboxdUrl)
-      return NextResponse.json({ error: 'Letterboxd URL is required' }, { status: 400 })
-
-    // Fetch movies from Letterboxd
-    const letterboxdApiUrl = `https://letterboxd-list-radarr.onrender.com/${letterboxdUrl}`
-    const letterboxdRes = await fetch(letterboxdApiUrl)
-
-    if (!letterboxdRes.ok) {
-      console.error('Letterboxd fetch failed:', letterboxdRes.status, letterboxdRes.statusText)
-      return NextResponse.json({ error: 'Failed to fetch from Letterboxd' }, { status: 502 })
+    if (!Array.isArray(movies) || movies.length === 0) {
+      return NextResponse.json({ error: 'At least one movie is required' }, { status: 400 })
     }
 
-    const letterboxdMovies: LetterboxdMovie[] = await letterboxdRes.json()
-
-    if (!Array.isArray(letterboxdMovies) || letterboxdMovies.length === 0) {
-      return NextResponse.json({ error: 'No movies found in Letterboxd list' }, { status: 400 })
+    const normalizedMovies = normalizeMovies(movies)
+    if (normalizedMovies.length === 0) {
+      return NextResponse.json({ error: 'At least one valid movie is required' }, { status: 400 })
     }
-
-    // Normalize movies for database (similar to normalizeMovies helper)
-    const normalizedMovies = letterboxdMovies.map((m) => ({
-      tmdbId: m.id,
-      title: m.title,
-      originalTitle: m.title,
-      releaseDate: m.release_year ? new Date(`${m.release_year}-01-01`) : null,
-      overview: m.overview || null,
-      posterPath: m.poster_url || null,
-      // imdbId: m.imdb_id || null,
-      // adult: m.adult || false,
-    }))
 
     // Use transaction to upsert GlobalMovies and create Collection with junction entries
     const collection = await prisma.$transaction(async (tx) => {
@@ -139,11 +119,9 @@ export async function POST(req: NextRequest) {
         data: {
           name,
           description: description || null,
-          letterboxdUrl,
           createdBy: user.email,
-          isGlobal: isGlobal || false,
+          isGlobal: isAdmin ? Boolean(isGlobal) : false,
           movieCount: movieIds.length,
-          lastSyncedAt: new Date(),
           movies: {
             create: movieIds.map((movieId, index) => ({
               movieId,

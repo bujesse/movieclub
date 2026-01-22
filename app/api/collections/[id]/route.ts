@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { prisma } from '../../../../lib/prisma'
 import { enrichCollections } from '../../../../lib/enrichCollections'
+import { normalizeMovies } from '../../../../lib/helpers'
+import { saveMovieDetails } from '../../../../lib/tmdb'
 import '../../../../lib/bigintSerializer'
 
 // GET single collection
@@ -35,7 +37,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   return NextResponse.json(enriched)
 }
 
-// PUT - Update collection name/description
+// PUT - Update collection name/description/movies
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getIdentityFromRequest(req)
   if (!user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -54,26 +56,84 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   try {
-    const { name, description } = await req.json()
+    const { name, description, movies, isGlobal } = await req.json()
 
     const data: any = {}
     if (name) data.name = name
     if (description !== undefined) data.description = description
+    if (typeof isGlobal === 'boolean' && isAdmin) {
+      data.isGlobal = isGlobal
+    }
 
-    const updated = await prisma.collection.update({
-      where: { id: collectionId },
-      data,
-      include: {
-        movies: {
-          include: {
-            movie: true,
-          },
-          orderBy: {
-            order: 'asc',
+    if (Array.isArray(movies) && movies.length === 0) {
+      return NextResponse.json({ error: 'At least one movie is required' }, { status: 400 })
+    }
+
+    const normalizedMovies = Array.isArray(movies) ? normalizeMovies(movies) : null
+    if (Array.isArray(movies) && normalizedMovies && normalizedMovies.length === 0) {
+      return NextResponse.json({ error: 'At least one valid movie is required' }, { status: 400 })
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.collection.update({
+        where: { id: collectionId },
+        data,
+      })
+
+      if (normalizedMovies) {
+        await tx.collectionMovie.deleteMany({
+          where: { collectionId },
+        })
+
+        const movieIds: number[] = []
+        for (const movie of normalizedMovies) {
+          const globalMovie = await tx.globalMovie.upsert({
+            where: { tmdbId: movie.tmdbId },
+            update: {},
+            create: movie,
+          })
+          movieIds.push(globalMovie.id)
+        }
+
+        await tx.collectionMovie.createMany({
+          data: movieIds.map((movieId, index) => ({
+            collectionId,
+            movieId,
+            order: index,
+          })),
+        })
+
+        await tx.collection.update({
+          where: { id: collectionId },
+          data: { movieCount: movieIds.length },
+        })
+      }
+
+      return tx.collection.findUnique({
+        where: { id: collectionId },
+        include: {
+          movies: {
+            include: {
+              movie: true,
+            },
+            orderBy: {
+              order: 'asc',
+            },
           },
         },
-      },
+      })
     })
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
+    }
+
+    if (normalizedMovies) {
+      const tmdbIds = Array.from(new Set(normalizedMovies.map((m) => m.tmdbId)))
+      Promise.allSettled(tmdbIds.map((id) => saveMovieDetails(id)))
+        .then(() => console.log(`Hydrated ${tmdbIds.length} movies for collection ${collectionId}`))
+        .catch((err) => console.error('Error hydrating movie details:', err))
+    }
 
     const [enriched] = await enrichCollections([updated], user.email)
 
