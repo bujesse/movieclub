@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { formatDistanceToNowStrict } from 'date-fns'
+import { RefreshCw } from 'lucide-react'
 import { EnrichedCollection } from '../types/collection'
 import { useRouter } from 'next/navigation'
 import { useCurrentUser } from './CurrentUserProvider'
@@ -27,6 +29,7 @@ export default function CollectionCard({
 
   const [pending, setPending] = useState(false)
   const [areYouSure, setAreYouSure] = useState(false)
+  const [syncPending, setSyncPending] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMoviesModalOpen, setIsMoviesModalOpen] = useState(false)
 
@@ -36,6 +39,9 @@ export default function CollectionCard({
   >({})
 
   const wasCreatedByMe = collection.createdBy === myEmail
+  const letterboxdUrl = collection.letterboxdUrl
+    ? `https://letterboxd.com/${collection.letterboxdUrl.replace(/^\/+/, '')}/`
+    : null
 
   // Helper to get seen state (with optimistic updates)
   const getSeenState = (tmdbId: number) => {
@@ -161,6 +167,26 @@ export default function CollectionCard({
     }
   }
 
+  const handleSync = async () => {
+    setSyncPending(true)
+    try {
+      const res = await fetch(`/api/collections/${collection.id}/sync`, { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || 'Failed to sync collection')
+        return
+      }
+      const updatedCollection = await res.json()
+      onEdit(collection.id, updatedCollection)
+      router.refresh()
+    } catch (err) {
+      console.error('Sync failed:', err)
+      alert('Failed to sync collection')
+    } finally {
+      setSyncPending(false)
+    }
+  }
+
   return (
     <div className="card" style={{ cursor: 'pointer' }} onClick={() => setIsMoviesModalOpen(true)}>
       {/* Header */}
@@ -170,6 +196,17 @@ export default function CollectionCard({
             <p className="mb-2">{collection.name}</p>
             {collection.description && (
               <p className="is-size-7 has-text-grey-light">{collection.description}</p>
+            )}
+            {letterboxdUrl && (
+              <a
+                className="is-size-7"
+                href={letterboxdUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View on Letterboxd
+              </a>
             )}
           </div>
         </div>
@@ -238,6 +275,18 @@ export default function CollectionCard({
                   Anyone has seen it: <strong>{updatedStats.anyoneSeenCount}</strong>
                 </span>
               </div>
+              {collection.letterboxdUrl && collection.lastSyncedAt && (
+                <div
+                  className="is-size-7 has-text-grey"
+                  style={{ marginTop: '0.5rem' }}
+                  suppressHydrationWarning
+                >
+                  Synced{' '}
+                  {formatDistanceToNowStrict(new Date(collection.lastSyncedAt), {
+                    addSuffix: true,
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -245,6 +294,22 @@ export default function CollectionCard({
 
       {/* Footer actions */}
       <footer className="card-footer">
+        {(wasCreatedByMe || isAdminMode) && collection.letterboxdUrl && (
+          <button
+            className="card-footer-item button"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleSync()
+            }}
+            disabled={syncPending}
+            title="Re-fetch this collection from Letterboxd"
+          >
+            <span className="icon is-small">
+              <RefreshCw size={16} className={syncPending ? 'rotating' : ''} />
+            </span>
+            <span className="ml-2">{syncPending ? 'Syncing...' : 'Sync'}</span>
+          </button>
+        )}
         {(wasCreatedByMe || isAdminMode) && (
           <button
             className="card-footer-item button has-text-link"
@@ -287,6 +352,21 @@ export default function CollectionCard({
         mode="edit"
         initialCollection={collection}
       />
+
+      <style jsx>{`
+        @keyframes rotate {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        :global(.rotating) {
+          animation: rotate 1s linear infinite;
+        }
+      `}</style>
     </div>
   )
 }

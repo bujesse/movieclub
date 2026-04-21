@@ -24,6 +24,7 @@ export type CollectionMovieInput = {
 export type CollectionPayload = {
   name: string
   description: string
+  letterboxdUrl: string
   isGlobal: boolean
   movies: CollectionMovieInput[]
 }
@@ -46,6 +47,7 @@ export default function CollectionModal({
   const { isAdminMode } = useCurrentUser()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [letterboxdUrl, setLetterboxdUrl] = useState('')
   const [movieInput, setMovieInput] = useState('')
   const [movieArray, setMovieArray] = useState<TmdbMovie[]>([])
   const [isGlobal, setIsGlobal] = useState(false)
@@ -53,7 +55,8 @@ export default function CollectionModal({
   const [showErrors, setShowErrors] = useState(false)
 
   const hasMovies = movieArray.length > 0
-  const isValid = name.trim() !== '' && hasMovies
+  const hasLetterboxdUrl = letterboxdUrl.trim() !== ''
+  const isValid = name.trim() !== '' && (hasMovies || hasLetterboxdUrl)
 
   useEffect(() => {
     if (isOpen) {
@@ -72,6 +75,7 @@ export default function CollectionModal({
     if (mode === 'edit' && initialCollection) {
       setName(initialCollection.name)
       setDescription(initialCollection.description ?? '')
+      setLetterboxdUrl(initialCollection.letterboxdUrl ?? '')
       setIsGlobal(Boolean(initialCollection.isGlobal))
       setMovieArray(
         initialCollection.movies.map((m) => ({
@@ -98,6 +102,7 @@ export default function CollectionModal({
     } else if (mode === 'create') {
       setName('')
       setDescription('')
+      setLetterboxdUrl('')
       setIsGlobal(false)
       setMovieArray([])
     }
@@ -131,6 +136,7 @@ export default function CollectionModal({
     onSubmit({
       name: name.trim(),
       description: description.trim(),
+      letterboxdUrl: letterboxdUrl.trim(),
       isGlobal: isAdminMode ? isGlobal : false,
       movies: movieArray.map((m) => ({
         tmdbId: Number(m.id),
@@ -204,6 +210,26 @@ export default function CollectionModal({
                   rows={2}
                 />
               </div>
+            </div>
+
+            <div className="field">
+              <label className="label" htmlFor="letterboxdUrl">
+                Letterboxd URL
+              </label>
+              <div className="control">
+                <input
+                  id="letterboxdUrl"
+                  className="input"
+                  placeholder="Optional: full Letterboxd list URL or path"
+                  type="text"
+                  value={letterboxdUrl}
+                  onChange={(e) => setLetterboxdUrl(e.target.value)}
+                />
+              </div>
+              <p className="help">
+                Optional. If provided on create, the collection imports from Letterboxd
+                immediately and can be synced later.
+              </p>
             </div>
 
             <div className="field">
@@ -332,7 +358,11 @@ export default function CollectionModal({
               </div>
             )}
 
-            {showErrors && !hasMovies && <p className="help is-danger">Add at least one movie.</p>}
+            {showErrors && !hasMovies && !hasLetterboxdUrl && (
+              <p className="help is-danger">
+                Add at least one movie or provide a Letterboxd URL.
+              </p>
+            )}
           </form>
         </section>
         <footer className="modal-card-foot">

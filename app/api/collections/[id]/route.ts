@@ -3,6 +3,7 @@ import { getIdentityFromRequest } from '../../../../lib/cfAccess'
 import { prisma } from '../../../../lib/prisma'
 import { enrichCollections } from '../../../../lib/enrichCollections'
 import { normalizeMovies } from '../../../../lib/helpers'
+import { normalizeLetterboxdPath } from '../../../../lib/letterboxd'
 import { saveMovieDetails } from '../../../../lib/tmdb'
 import '../../../../lib/bigintSerializer'
 
@@ -56,11 +57,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   try {
-    const { name, description, movies, isGlobal } = await req.json()
+    const { name, description, letterboxdUrl, movies, isGlobal } = await req.json()
 
     const data: any = {}
     if (name) data.name = name
     if (description !== undefined) data.description = description
+    if (letterboxdUrl !== undefined) {
+      data.letterboxdUrl = letterboxdUrl ? normalizeLetterboxdPath(letterboxdUrl) : null
+    }
     if (typeof isGlobal === 'boolean' && isAdmin) {
       data.isGlobal = isGlobal
     }

@@ -4,7 +4,38 @@ import { getIdentityFromRequest } from '../../../lib/cfAccess'
 import { enrichCollections } from '../../../lib/enrichCollections'
 import { saveMovieDetails } from '../../../lib/tmdb'
 import { normalizeMovies } from '../../../lib/helpers'
+import { normalizeLetterboxdPath } from '../../../lib/letterboxd'
+import type { LetterboxdMovie } from '../../../types/collection'
 import '../../../lib/bigintSerializer'
+
+async function fetchLetterboxdMovies(letterboxdUrl: string) {
+  const normalizedPath = normalizeLetterboxdPath(letterboxdUrl)
+  const letterboxdApiUrl = `https://letterboxd-list-radarr.onrender.com/${normalizedPath}`
+  const letterboxdRes = await fetch(letterboxdApiUrl)
+
+  if (!letterboxdRes.ok) {
+    console.error('Letterboxd fetch failed:', letterboxdRes.status, letterboxdRes.statusText)
+    throw new Error('Failed to fetch from Letterboxd')
+  }
+
+  const letterboxdMovies: LetterboxdMovie[] = await letterboxdRes.json()
+
+  if (!Array.isArray(letterboxdMovies) || letterboxdMovies.length === 0) {
+    throw new Error('No movies found in Letterboxd list')
+  }
+
+  return {
+    normalizedPath,
+    movies: letterboxdMovies.map((m) => ({
+      tmdbId: m.id,
+      title: m.title,
+      originalTitle: m.title,
+      releaseDate: m.release_year ? new Date(`${m.release_year}-01-01`) : null,
+      overview: m.overview || null,
+      posterPath: m.poster_url || null,
+    })),
+  }
+}
 
 // GET all collections with enriched data
 export async function GET(req: NextRequest) {
@@ -89,16 +120,34 @@ export async function POST(req: NextRequest) {
     // if (!user.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const isAdmin = user.isAdmin
 
-    const { name, description, isGlobal, movies } = await req.json()
+    const { name, description, letterboxdUrl, isGlobal, movies } = await req.json()
 
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-    if (!Array.isArray(movies) || movies.length === 0) {
-      return NextResponse.json({ error: 'At least one movie is required' }, { status: 400 })
-    }
+    let normalizedMovies
+    let normalizedLetterboxdUrl: string | null = null
+    let importedFromLetterboxd = false
 
-    const normalizedMovies = normalizeMovies(movies)
-    if (normalizedMovies.length === 0) {
-      return NextResponse.json({ error: 'At least one valid movie is required' }, { status: 400 })
+    if (letterboxdUrl) {
+      try {
+        const imported = await fetchLetterboxdMovies(letterboxdUrl)
+        normalizedMovies = imported.movies
+        normalizedLetterboxdUrl = imported.normalizedPath
+        importedFromLetterboxd = true
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message || 'Failed to fetch from Letterboxd' }, { status: 502 })
+      }
+    } else {
+      if (!Array.isArray(movies) || movies.length === 0) {
+        return NextResponse.json({ error: 'At least one movie is required' }, { status: 400 })
+      }
+
+      normalizedMovies = normalizeMovies(movies)
+      if (normalizedMovies.length === 0) {
+        return NextResponse.json(
+          { error: 'At least one valid movie is required' },
+          { status: 400 }
+        )
+      }
     }
 
     // Use transaction to upsert GlobalMovies and create Collection with junction entries
@@ -119,9 +168,11 @@ export async function POST(req: NextRequest) {
         data: {
           name,
           description: description || null,
+          letterboxdUrl: normalizedLetterboxdUrl,
           createdBy: user.email,
           isGlobal: isAdmin ? Boolean(isGlobal) : false,
           movieCount: movieIds.length,
+          lastSyncedAt: importedFromLetterboxd ? new Date() : null,
           movies: {
             create: movieIds.map((movieId, index) => ({
               movieId,

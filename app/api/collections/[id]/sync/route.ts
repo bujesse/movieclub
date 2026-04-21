@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getIdentityFromRequest } from '../../../../../lib/cfAccess'
 import { prisma } from '../../../../../lib/prisma'
 import { enrichCollections } from '../../../../../lib/enrichCollections'
+import { normalizeLetterboxdPath } from '../../../../../lib/letterboxd'
 import { saveMovieDetails } from '../../../../../lib/tmdb'
 import type { LetterboxdMovie } from '../../../../../types/collection'
 import '../../../../../lib/bigintSerializer'
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // Fetch movies from Letterboxd
-    const letterboxdApiUrl = `https://letterboxd-list-radarr.onrender.com/${collection.letterboxdUrl}`
+    const letterboxdApiUrl = `https://letterboxd-list-radarr.onrender.com/${normalizeLetterboxdPath(collection.letterboxdUrl)}`
     const letterboxdRes = await fetch(letterboxdApiUrl)
 
     if (!letterboxdRes.ok) {
