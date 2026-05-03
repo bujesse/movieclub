@@ -5,11 +5,14 @@ type Tx = PrismaClient | Prisma.TransactionClient
 export async function getNextMeetupWithList(tx: Tx) {
   const nowIso = new Date().toISOString()
   const normalizedDateSql =
-    `CASE WHEN typeof(date) = 'integer' THEN datetime(date / 1000, 'unixepoch') ELSE datetime(date) END`
+    `CASE WHEN typeof(m.date) = 'integer' THEN datetime(m.date / 1000, 'unixepoch') ELSE datetime(m.date) END`
   const rows = await tx.$queryRawUnsafe<{ id: number; date: string; movieListId: number }[]>(
-    `SELECT id, date, movieListId
-     FROM "Meetup"
-     WHERE movieListId IS NOT NULL AND ${normalizedDateSql} > datetime(?)
+    `SELECT m.id, m.date, m.movieListId
+     FROM "Meetup" m
+     INNER JOIN "MovieList" ml ON ml.id = m.movieListId
+     WHERE m.movieListId IS NOT NULL
+       AND ml.deletedAt IS NULL
+       AND ${normalizedDateSql} > datetime(?)
      ORDER BY ${normalizedDateSql} ASC
      LIMIT 1`,
     nowIso
@@ -80,11 +83,14 @@ export async function getNextMeetupWithoutList(tx: Tx) {
 export async function getPastMeetupLists(tx: Tx) {
   const nowIso = new Date().toISOString()
   const normalizedDateSql =
-    `CASE WHEN typeof(date) = 'integer' THEN datetime(date / 1000, 'unixepoch') ELSE datetime(date) END`
+    `CASE WHEN typeof(m.date) = 'integer' THEN datetime(m.date / 1000, 'unixepoch') ELSE datetime(m.date) END`
   const rows = await tx.$queryRawUnsafe<{ id: number; movieListId: number }[]>(
-    `SELECT id, movieListId
-     FROM "Meetup"
-     WHERE movieListId IS NOT NULL AND ${normalizedDateSql} < datetime(?)
+    `SELECT m.id, m.movieListId
+     FROM "Meetup" m
+     INNER JOIN "MovieList" ml ON ml.id = m.movieListId
+     WHERE m.movieListId IS NOT NULL
+       AND ml.deletedAt IS NULL
+       AND ${normalizedDateSql} < datetime(?)
      ORDER BY ${normalizedDateSql} DESC`,
     nowIso
   )
@@ -118,9 +124,11 @@ export async function getPastMeetupLists(tx: Tx) {
 
 export async function getMeetupMovieTmdbIds(tx: Tx): Promise<Set<number>> {
   const rows = await tx.$queryRawUnsafe<{ id: number; movieListId: number }[]>(
-    `SELECT id, movieListId
-     FROM "Meetup"
-     WHERE movieListId IS NOT NULL`
+    `SELECT m.id, m.movieListId
+     FROM "Meetup" m
+     INNER JOIN "MovieList" ml ON ml.id = m.movieListId
+     WHERE m.movieListId IS NOT NULL
+       AND ml.deletedAt IS NULL`
   )
 
   if (rows.length === 0) return new Set()
@@ -144,10 +152,32 @@ export async function getMeetupMovieTmdbIds(tx: Tx): Promise<Set<number>> {
   return new Set(junctionEntries.map((entry) => entry.movie.tmdbId))
 }
 
+export async function getCurrentMeetupMovieTmdbIds(tx: Tx): Promise<Set<number>> {
+  const meetup = await getNextMeetupWithList(tx)
+  const movieListId = meetup?.movieListId
+
+  if (!movieListId) return new Set()
+
+  const junctionEntries = await tx.movieListMovie.findMany({
+    where: {
+      movieListId,
+    },
+    include: {
+      movie: {
+        select: {
+          tmdbId: true,
+        },
+      },
+    },
+  })
+
+  return new Set(junctionEntries.map((entry) => entry.movie.tmdbId))
+}
+
 export async function getUnscheduledMovieListTmdbIds(tx: Tx): Promise<Set<number>> {
   // Get lists that are not tied to any meetup yet
   const listRows = await tx.movieList.findMany({
-    where: { Meetup: { is: null } },
+    where: { Meetup: { is: null }, deletedAt: null },
     select: { id: true },
   })
 

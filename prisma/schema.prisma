@@ -13,6 +13,7 @@ model MovieList {
   title       String
   description String?
   createdBy   String
+  deletedAt   DateTime?
   movies      MovieListMovie[]  // Changed to junction table
   votes       Vote[]
   comments    Comment[]
@@ -23,6 +24,7 @@ model MovieList {
 
   @@index([createdBy])
   @@index([createdAt])
+  @@index([deletedAt])
 }
 
 // Global movie table - single source of truth for movie data
@@ -97,6 +99,7 @@ model Collection {
   // Access control
   createdBy String
   isGlobal  Boolean @default(false) // True for admin-created, false for user collections
+  deletedAt DateTime?
 
   // Sync metadata
   lastSyncedAt DateTime?
@@ -109,6 +112,7 @@ model Collection {
 
   @@index([createdBy])
   @@index([isGlobal])
+  @@index([deletedAt])
 }
 
 // Junction table: Collection <-> GlobalMovie (many-to-many)

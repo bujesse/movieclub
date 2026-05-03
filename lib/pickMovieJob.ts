@@ -38,7 +38,7 @@ export async function pickMovieJob(bypassCutoff = false) {
 
     // Candidate lists: not yet linked to any meetup
     const candidates = await prisma.movieList.findMany({
-      where: { Meetup: null },
+      where: { Meetup: null, deletedAt: null },
       select: { id: true, createdAt: true },
     })
     if (candidates.length === 0) return done({ ran: false, reason: 'no candidate lists' })

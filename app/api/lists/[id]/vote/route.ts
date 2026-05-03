@@ -16,13 +16,25 @@ export async function POST(req: NextRequest, { params }: { params: any }) {
     let allTimeScore = 0
 
     await prisma.$transaction(async (tx) => {
+      const list = await tx.movieList.findFirst({
+        where: { id: movieListId, deletedAt: null },
+        select: { id: true },
+      })
+      if (!list) throw new Error('LIST_NOT_FOUND')
+
       const meetup = await getNextMeetupWithoutList(tx)
       if (!meetup) throw new Error('NO_MEETUP')
       const meetupId = meetup.id
 
       // Enforce 3-vote limit for THIS upcoming meetup
       const used = await tx.vote.count({
-        where: { userId: id.email, meetupId },
+        where: {
+          userId: id.email,
+          meetupId,
+          movieList: {
+            deletedAt: null,
+          },
+        },
       })
       if (used >= MAX_VOTES) throw new Error('LIMIT_REACHED')
 
@@ -56,6 +68,9 @@ export async function POST(req: NextRequest, { params }: { params: any }) {
 
     return NextResponse.json({ ok: true, hasVoted: true, score, allTimeScore })
   } catch (e: any) {
+    if (e.message === 'LIST_NOT_FOUND') {
+      return NextResponse.json({ error: 'List not found' }, { status: 404 })
+    }
     if (e.message === 'NO_MEETUP') {
       return NextResponse.json({ error: 'No upcoming meetup to vote for' }, { status: 400 })
     }
@@ -73,6 +88,14 @@ export async function DELETE(req: NextRequest, { params }: any) {
   const movieListId = Number(params.id)
 
   try {
+    const list = await prisma.movieList.findFirst({
+      where: { id: movieListId, deletedAt: null },
+      select: { id: true },
+    })
+    if (!list) {
+      return NextResponse.json({ error: 'List not found' }, { status: 404 })
+    }
+
     const meetup = await getNextMeetupWithoutList(prisma)
     if (!meetup) return NextResponse.json({ error: 'No upcoming meetup' }, { status: 400 })
     const meetupId = meetup.id

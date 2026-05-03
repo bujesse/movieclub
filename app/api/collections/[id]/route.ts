@@ -15,8 +15,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id: idParam } = await params
   const collectionId = Number(idParam)
 
-  const collection = await prisma.collection.findUnique({
-    where: { id: collectionId },
+  const collection = await prisma.collection.findFirst({
+    where: { id: collectionId, deletedAt: null },
     include: {
       movies: {
         include: {
@@ -47,7 +47,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const collectionId = Number(idParam)
 
   // Ensure the collection exists
-  const collection = await prisma.collection.findUnique({ where: { id: collectionId } })
+  const collection = await prisma.collection.findFirst({
+    where: { id: collectionId, deletedAt: null },
+  })
   if (!collection) return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
 
   // Check permissions (admin or creator only)
@@ -113,8 +115,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         })
       }
 
-      return tx.collection.findUnique({
-        where: { id: collectionId },
+      return tx.collection.findFirst({
+        where: { id: collectionId, deletedAt: null },
         include: {
           movies: {
             include: {
@@ -159,8 +161,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   console.log('Deleting collection id:', idParam, 'by user:', user.email)
 
   // Ensure the collection exists
-  const collection = await prisma.collection.findUnique({
-    where: { id: collectionId },
+  const collection = await prisma.collection.findFirst({
+    where: { id: collectionId, deletedAt: null },
   })
   if (!collection) {
     return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
@@ -173,11 +175,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   try {
-    // Delete the collection and its associated junction entries in a transaction
-    await prisma.$transaction([
-      prisma.collectionMovie.deleteMany({ where: { collectionId: collectionId } }),
-      prisma.collection.delete({ where: { id: collectionId } }),
-    ])
+    await prisma.collection.update({
+      where: { id: collectionId },
+      data: { deletedAt: new Date() },
+    })
 
     return NextResponse.json({ ok: true })
   } catch (err) {

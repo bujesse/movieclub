@@ -18,7 +18,7 @@ export async function GET(
 
   const [listRows, collectionRows] = await Promise.all([
     prisma.movieListMovie.findMany({
-      where: { movie: { tmdbId } },
+      where: { movie: { tmdbId }, movieList: { deletedAt: null } },
       select: {
         movieList: {
           select: {
@@ -32,7 +32,7 @@ export async function GET(
       },
     }),
     prisma.collectionMovie.findMany({
-      where: { movie: { tmdbId } },
+      where: { movie: { tmdbId }, collection: { deletedAt: null } },
       select: {
         collection: {
           select: { id: true, name: true, isGlobal: true },

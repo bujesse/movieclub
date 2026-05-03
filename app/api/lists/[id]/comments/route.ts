@@ -11,6 +11,14 @@ export async function GET(req: NextRequest, { params }: { params: any }) {
   const movieListId = Number(params.id)
 
   try {
+    const list = await prisma.movieList.findFirst({
+      where: { id: movieListId, deletedAt: null },
+      select: { id: true },
+    })
+    if (!list) {
+      return NextResponse.json({ error: 'List not found' }, { status: 404 })
+    }
+
     const comments = await prisma.comment.findMany({
       where: { movieListId },
       orderBy: { createdAt: 'asc' },
@@ -31,6 +39,14 @@ export async function POST(req: NextRequest, { params }: { params: any }) {
   const movieListId = Number(params.id)
 
   try {
+    const list = await prisma.movieList.findFirst({
+      where: { id: movieListId, deletedAt: null },
+      select: { id: true },
+    })
+    if (!list) {
+      return NextResponse.json({ error: 'List not found' }, { status: 404 })
+    }
+
     const { text } = await req.json()
 
     if (!text || !text.trim()) {

@@ -177,6 +177,14 @@ function AllListsPageContent() {
         <p className="subtitle">
           Nominate your favorite list for the next meetup. Vote on{' '}
           <a href={ROUTES.HOME}>Nominated Lists</a>.
+          {!loading && (
+            <>
+              <br />
+              {filteredAndSortedLists.length !== lists.length
+                ? `${filteredAndSortedLists.length} / ${lists.length} lists`
+                : `${lists.length} lists`}
+            </>
+          )}
         </p>
         <button className="button is-primary is-medium mt-3" onClick={handleCreateNewList}>
           + Create New List

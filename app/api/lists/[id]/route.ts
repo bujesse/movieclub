@@ -18,7 +18,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const movieListId = Number(idParam)
 
   // Ensure the list exists and was created by this user
-  const list = await prisma.movieList.findUnique({ where: { id: movieListId } })
+  const list = await prisma.movieList.findFirst({ where: { id: movieListId, deletedAt: null } })
   if (!list) return NextResponse.json({ error: 'List not found' }, { status: 404 })
   if (list.createdBy !== userId && !user.isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -70,8 +70,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }
 
       // Re-fetch with updated details
-      return tx.movieList.findUnique({
-        where: { id: movieListId },
+      return tx.movieList.findFirst({
+        where: { id: movieListId, deletedAt: null },
         include: {
           movies: {
             include: {
@@ -123,8 +123,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   console.log('Deleting list id:', idParam, 'by user:', userId)
 
   // Ensure the list exists and was created by this user
-  const list = await prisma.movieList.findUnique({
-    where: { id: movieListId },
+  const list = await prisma.movieList.findFirst({
+    where: { id: movieListId, deletedAt: null },
   })
   if (!list) {
     return NextResponse.json({ error: 'List not found' }, { status: 404 })
@@ -164,13 +164,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   try {
-    // Delete the list and its associated data in a transaction
-    await prisma.$transaction([
-      prisma.vote.deleteMany({ where: { movieListId: movieListId } }),
-      prisma.nomination.deleteMany({ where: { movieListId: movieListId } }),
-      prisma.movieListMovie.deleteMany({ where: { movieListId: movieListId } }),
-      prisma.movieList.delete({ where: { id: movieListId } }),
-    ])
+    await prisma.movieList.update({
+      where: { id: movieListId },
+      data: { deletedAt: new Date() },
+    })
 
     revalidatePath('/')
     return NextResponse.json({ ok: true })

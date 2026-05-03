@@ -1,5 +1,6 @@
 # Features
 
+* add oscars 2025
 * add daily sync, but only sync movies that have changed since last sync
 * import "seen" data from letterboxd - data export has watched.csv - https://letterboxd.com/settings/data/
 * Ordering of collections

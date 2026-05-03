@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useMemo } from 'react'
 import ListCard from '../ListCard'
 import { MovieListAllWithFlags } from '../page'
 import { withDuplicateFlags } from '../../lib/listHelpers'
@@ -8,10 +8,49 @@ import { useToggleSeen, useFilterAndSort, useScrollToTopOnChange, useURLSync } f
 import { useListsPage } from '../ListsPageContext'
 import { useCurrentUser } from '../CurrentUserProvider'
 import FilterSortControls from '../FilterSortControls'
+import { formatMinutes } from '../../lib/helpers'
+
+type CreditPerson = {
+  id?: number
+  name?: string
+}
+
+function formatTopEntries(
+  entries: Array<{ name: string; count: number }>,
+  emptyLabel: string,
+  limit: number
+) {
+  if (entries.length === 0) return emptyLabel
+  return entries.slice(0, limit).map((entry) => `${entry.name} (${entry.count})`).join(', ')
+}
+
+function getTickValues(maxValue: number) {
+  if (maxValue <= 0) return [0]
+  if (maxValue <= 4) return Array.from({ length: maxValue + 1 }, (_, index) => index)
+
+  const roughStep = maxValue / 4
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep))
+  const normalized = roughStep / magnitude
+  const niceStep =
+    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10
+  const step = niceStep * magnitude
+  const ticks = []
+
+  for (let value = 0; value <= maxValue; value += step) {
+    ticks.push(value)
+  }
+
+  if (ticks[ticks.length - 1] !== maxValue) {
+    ticks.push(Math.ceil(maxValue / step) * step)
+  }
+
+  return ticks
+}
 
 function ArchivePageContent() {
   const [lists, setLists] = useState<MovieListAllWithFlags[]>([])
   const [loading, setLoading] = useState(true)
+  const [hoveredYear, setHoveredYear] = useState<number | null>(null)
 
   const { user } = useCurrentUser()
   const { filter, sortBy, setFilter, setSortBy } = useListsPage()
@@ -21,6 +60,13 @@ function ArchivePageContent() {
 
   const onToggleSeen = useToggleSeen(setLists)
   useScrollToTopOnChange(filter, sortBy)
+
+  const setHoveredYearFromTouch = (clientX: number, clientY: number) => {
+    const touched = document.elementFromPoint(clientX, clientY)
+    const slot = touched?.closest('[data-year-slot]')
+    const year = slot?.getAttribute('data-year-slot')
+    setHoveredYear(year ? Number(year) : null)
+  }
 
   useEffect(() => {
     const fetchLists = async () => {
@@ -42,12 +88,421 @@ function ArchivePageContent() {
 
   const filteredAndSortedLists = useFilterAndSort(lists, filter, sortBy, user?.email)
 
+  const archiveStats = useMemo(() => {
+    const winnerCounts = new Map<string, number>()
+    const actorSeenCounts = new Map<string, number>()
+    const directorSeenCounts = new Map<string, number>()
+    const languageCounts = new Map<string, number>()
+    const yearCounts = new Map<number, number>()
+    const yearMovies = new Map<number, string[]>()
+    const seenMovies = new Set<number>()
+    let totalMovieCount = 0
+    let totalRuntimeMinutes = 0
+
+    for (const list of lists) {
+      winnerCounts.set(list.createdBy, (winnerCounts.get(list.createdBy) ?? 0) + 1)
+      totalMovieCount += list.movies.length
+
+      for (const movie of list.movies) {
+        totalRuntimeMinutes += movie.runtime && movie.runtime > 0 ? movie.runtime : 0
+        const releaseYear = movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : null
+        if (releaseYear && Number.isFinite(releaseYear)) {
+          yearCounts.set(releaseYear, (yearCounts.get(releaseYear) ?? 0) + 1)
+          yearMovies.set(releaseYear, [...(yearMovies.get(releaseYear) ?? []), movie.title])
+        }
+        const language = movie.originalLanguage?.trim() || movie.original_language?.trim()
+        if (language) {
+          languageCounts.set(language, (languageCounts.get(language) ?? 0) + 1)
+        }
+        if (seenMovies.has(movie.tmdbId)) continue
+        seenMovies.add(movie.tmdbId)
+
+        const seenCount = movie.seenCount ?? 0
+        const actors = Array.isArray(movie.actors) ? (movie.actors as CreditPerson[]) : []
+        const directors = Array.isArray(movie.directors) ? (movie.directors as CreditPerson[]) : []
+
+        for (const actor of actors) {
+          const name = actor?.name?.trim()
+          if (!name) continue
+          actorSeenCounts.set(name, (actorSeenCounts.get(name) ?? 0) + seenCount)
+        }
+
+        for (const director of directors) {
+          const name = director?.name?.trim()
+          if (!name) continue
+          directorSeenCounts.set(name, (directorSeenCounts.get(name) ?? 0) + seenCount)
+        }
+      }
+    }
+
+    const sortedWinners = Array.from(winnerCounts.entries())
+      .map(([email, count]) => ({ name: email.split('@')[0], count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    const sortedActors = Array.from(actorSeenCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    const sortedDirectors = Array.from(directorSeenCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    const sortedLanguages = Array.from(languageCounts.entries())
+      .map(([name, count]) => ({ name: name.toUpperCase(), count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    const sortedYears = Array.from(yearCounts.entries())
+      .map(([year, count]) => ({ year, count }))
+      .sort((a, b) => a.year - b.year)
+    const yearSeries =
+      sortedYears.length === 0
+        ? []
+        : Array.from(
+            { length: sortedYears[sortedYears.length - 1].year - sortedYears[0].year + 1 },
+            (_, index) => {
+              const year = sortedYears[0].year + index
+              return {
+                year,
+                count: yearCounts.get(year) ?? 0,
+                movies: yearMovies.get(year) ?? [],
+              }
+            }
+          )
+    const maxYearCount = yearSeries.reduce((max, entry) => Math.max(max, entry.count), 0)
+    const yearTicks = getTickValues(maxYearCount)
+
+    return {
+      listCount: lists.length,
+      totalMovieCount,
+      totalRuntimeMinutes,
+      yearCounts: yearSeries,
+      maxYearCount,
+      yearTicks,
+      topWinners: sortedWinners.slice(0, 3),
+      topActors: sortedActors,
+      topDirectors: sortedDirectors,
+      topLanguages: sortedLanguages,
+    }
+  }, [lists])
+
   return (
     <section className="section">
       <div className="container has-text-centered mb-5">
         <h2 className="title">Archive</h2>
         <p className="subtitle">Past movie lists from previous meetups</p>
       </div>
+
+      {!loading && lists.length > 0 && (
+        <div className="container mb-5">
+          <div className="columns is-multiline">
+            <div className="column is-12-mobile is-4-desktop">
+              <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
+                <p className="heading mb-1">Archive winner</p>
+                <p className="title is-5 mb-1" style={{ lineHeight: 1.1 }}>
+                  {archiveStats.topWinners[0]?.name ?? 'None yet'}
+                </p>
+                <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
+                  {archiveStats.topWinners.length > 0
+                    ? [
+                        `${archiveStats.topWinners[0].count} selected ${
+                          archiveStats.topWinners[0].count === 1 ? 'list' : 'lists'
+                        }`,
+                        ...archiveStats.topWinners
+                          .slice(1)
+                          .map(
+                            (winner) =>
+                              `${winner.name} (${winner.count} selected ${
+                                winner.count === 1 ? 'list' : 'lists'
+                              })`
+                          ),
+                      ].join(', ')
+                    : 'No archived winners'}
+                </p>
+              </div>
+            </div>
+            <div className="column is-12-mobile is-4-desktop">
+              <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
+                <p className="heading mb-1">Most seen actors</p>
+                <p className="title is-6 mb-1" style={{ lineHeight: 1.15 }}>
+                  {formatTopEntries(archiveStats.topActors, 'No actor data', 5)}
+                </p>
+                <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
+                  Numbers show total seen marks across archived movies
+                </p>
+              </div>
+            </div>
+            <div className="column is-12-mobile is-4-desktop">
+              <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
+                <p className="heading mb-1">Most seen directors</p>
+                <p className="title is-6 mb-1" style={{ lineHeight: 1.15 }}>
+                  {formatTopEntries(archiveStats.topDirectors, 'No director data', 5)}
+                </p>
+                <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
+                  Numbers show total seen marks across archived movies
+                </p>
+              </div>
+            </div>
+            <div className="column is-12-mobile is-4-desktop">
+              <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
+                <p className="heading mb-1">Top languages</p>
+                <p className="title is-6 mb-1" style={{ lineHeight: 1.15 }}>
+                  {formatTopEntries(archiveStats.topLanguages, 'No language data', 5)}
+                </p>
+              </div>
+            </div>
+            <div className="column is-12-mobile is-4-desktop">
+              <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
+                <p className="heading mb-1">Archived lists</p>
+                <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
+                  {archiveStats.listCount}
+                </p>
+              </div>
+            </div>
+            <div className="column is-12-mobile is-4-desktop">
+              <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
+                <p className="heading mb-1">Archived movies</p>
+                <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
+                  {archiveStats.totalMovieCount}
+                </p>
+              </div>
+            </div>
+            <div className="column is-12-mobile is-4-desktop">
+              <div className="box" style={{ padding: '0.5rem 1.1rem' }}>
+                <p className="heading mb-1">Total runtime</p>
+                <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
+                  {formatMinutes(archiveStats.totalRuntimeMinutes)}
+                </p>
+              </div>
+            </div>
+            <div className="column is-12">
+              <div className="box" style={{ padding: '0.75rem 1.1rem' }}>
+                <p className="heading mb-2">Archived movies by release year</p>
+                {archiveStats.yearCounts.length === 0 ? (
+                  <p className="has-text-grey is-size-7 mb-0">No release year data</p>
+                ) : (
+                  <div
+                    style={{
+                      overflowX: 'hidden',
+                      overflowY: 'visible',
+                      paddingTop: '3.25rem',
+                      paddingBottom: '0.25rem',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '100%',
+                        minWidth: '0',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        paddingRight: '2px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '28px minmax(0, 1fr)',
+                          gap: '0.3rem',
+                          width: '100%',
+                          minWidth: '0',
+                          maxWidth: '100%',
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                      <div
+                        style={{
+                          position: 'relative',
+                          height: '220px',
+                        }}
+                      >
+                        {archiveStats.yearTicks.map((tick) => {
+                          const bottom =
+                            archiveStats.yearTicks[archiveStats.yearTicks.length - 1] === 0
+                              ? 0
+                              : (tick / archiveStats.yearTicks[archiveStats.yearTicks.length - 1]) *
+                                100
+                          return (
+                            <div
+                              key={tick}
+                              style={{
+                                position: 'absolute',
+                                bottom: `${bottom}%`,
+                                right: 0,
+                                transform: 'translateY(50%)',
+                                fontSize: '0.58rem',
+                                color: '#7a7a7a',
+                                lineHeight: 1,
+                              }}
+                            >
+                              {tick}
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div>
+                        <div
+                          style={{
+                            position: 'relative',
+                            height: '220px',
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            gap: '2px',
+                            padding: '0',
+                            borderLeft: '1px solid rgba(255, 255, 255, 0.14)',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.14)',
+                            overflow: 'visible',
+                            touchAction: 'none',
+                          }}
+                          onTouchStart={(e) => {
+                            const touch = e.touches[0]
+                            if (!touch) return
+                            setHoveredYearFromTouch(touch.clientX, touch.clientY)
+                          }}
+                          onTouchMove={(e) => {
+                            const touch = e.touches[0]
+                            if (!touch) return
+                            setHoveredYearFromTouch(touch.clientX, touch.clientY)
+                          }}
+                          onTouchEnd={() => setHoveredYear(null)}
+                          onTouchCancel={() => setHoveredYear(null)}
+                        >
+                          {archiveStats.yearTicks.map((tick) => {
+                            const bottom =
+                              archiveStats.yearTicks[archiveStats.yearTicks.length - 1] === 0
+                                ? 0
+                                : (tick / archiveStats.yearTicks[archiveStats.yearTicks.length - 1]) *
+                                  100
+                            return (
+                              <div
+                                key={tick}
+                                style={{
+                                  position: 'absolute',
+                                  left: 0,
+                                  right: 0,
+                                  bottom: `${bottom}%`,
+                                  borderTop: '1px dashed rgba(255, 255, 255, 0.08)',
+                                }}
+                              />
+                            )
+                          })}
+                          {archiveStats.yearCounts.map((entry, index) => (
+                            <div
+                              key={entry.year}
+                              data-year-slot={entry.year}
+                              style={{
+                                flex: '1 1 0',
+                                minWidth: '0',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'flex-end',
+                                height: '100%',
+                                position: 'relative',
+                                zIndex: hoveredYear === entry.year ? 20 : 1,
+                              }}
+                              onMouseEnter={() => setHoveredYear(entry.year)}
+                              onMouseLeave={() =>
+                                setHoveredYear((current) => (current === entry.year ? null : current))
+                              }
+                            >
+                              {hoveredYear === entry.year && entry.count > 0 && (
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    left:
+                                      index <= 1
+                                        ? '0'
+                                        : index >= archiveStats.yearCounts.length - 2
+                                          ? 'auto'
+                                          : '50%',
+                                    right:
+                                      index >= archiveStats.yearCounts.length - 2 ? '0' : 'auto',
+                                    bottom: `min(calc(${
+                                      Math.max(
+                                        4,
+                                        (entry.count /
+                                          archiveStats.yearTicks[
+                                            archiveStats.yearTicks.length - 1
+                                          ]) *
+                                          100
+                                      )
+                                    }% + 10px), calc(100% - 12px))`,
+                                    transform:
+                                      index <= 1 || index >= archiveStats.yearCounts.length - 2
+                                        ? 'translateX(0)'
+                                        : 'translateX(-50%)',
+                                    width: '180px',
+                                    padding: '0.45rem 0.55rem',
+                                    background: '#20242d',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 6px 18px rgba(0, 0, 0, 0.25)',
+                                    textAlign: 'left',
+                                    pointerEvents: 'none',
+                                    zIndex: 10,
+                                  }}
+                                >
+                                  <div
+                                    className="has-text-white"
+                                    style={{ fontSize: '0.68rem', fontWeight: 600, marginBottom: '0.25rem' }}
+                                  >
+                                    {entry.year} · {entry.count}
+                                  </div>
+                                  <div
+                                    className="has-text-grey-light"
+                                    style={{ fontSize: '0.62rem', lineHeight: 1.25 }}
+                                  >
+                                    {entry.movies.join(', ')}
+                                  </div>
+                                </div>
+                              )}
+                              <div
+                                style={{
+                                  width: '100%',
+                                  height: `${(entry.count / archiveStats.yearTicks[archiveStats.yearTicks.length - 1]) * 100}%`,
+                                  minHeight: '2px',
+                                  background: 'linear-gradient(180deg, #48c78e, #3e8ed0)',
+                                  borderRadius: '4px 4px 0 0',
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '2px',
+                            padding: '0.25rem 0 0',
+                          }}
+                        >
+                          {archiveStats.yearCounts.map((entry, index) => {
+                            const showLabel =
+                              index === 0 ||
+                              index === archiveStats.yearCounts.length - 1 ||
+                              entry.year % 10 === 0
+
+                            return (
+                              <div
+                                key={entry.year}
+                                className="has-text-grey-light is-size-7"
+                                style={{
+                                  flex: '1 1 0',
+                                  minWidth: '0',
+                                  textAlign: 'center',
+                                  fontSize: '0.52rem',
+                                  lineHeight: 1,
+                                }}
+                              >
+                                {showLabel ? entry.year : ''}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isReady && (
         <div className="navbar is-dark is-fixed-bottom is-hidden-desktop">

@@ -58,7 +58,7 @@ export default function CollectionMoviesModal({
       case 'not-seen-by-anyone':
         return seenState.seenCount === 0
       case 'in-movie-list':
-        return m.movie.inUnscheduledList
+        return m.movie.inActiveMovieList
       case 'all':
       default:
         return true

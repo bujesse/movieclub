@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../../../lib/prisma'
 import { getIdentityFromRequest } from '../../../../../lib/cfAccess'
+import { parseClientLocalDateTimeToUtc } from '../../../../../lib/meetupDate'
 import '../../../../../lib/bigintSerializer'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -20,8 +21,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Meetup date is required' }, { status: 400 })
   }
 
-  const parsedDate = new Date(body.date)
-  if (Number.isNaN(parsedDate.getTime())) {
+  const parsedDate = parseClientLocalDateTimeToUtc(body.date, body.timezoneOffsetMinutes)
+  if (!parsedDate) {
     return NextResponse.json({ error: 'Invalid meetup date' }, { status: 400 })
   }
 
@@ -31,7 +32,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       : Number(body.movieListId)
 
   if (movieListId !== null) {
-    const list = await prisma.movieList.findUnique({ where: { id: movieListId } })
+    const list = await prisma.movieList.findFirst({
+      where: { id: movieListId, deletedAt: null },
+    })
     if (!list) {
       return NextResponse.json({ error: 'List not found' }, { status: 404 })
     }

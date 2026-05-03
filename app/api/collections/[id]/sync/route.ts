@@ -17,7 +17,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const collectionId = Number(idParam)
 
     // Ensure the collection exists
-    const collection = await prisma.collection.findUnique({ where: { id: collectionId } })
+    const collection = await prisma.collection.findFirst({
+      where: { id: collectionId, deletedAt: null },
+    })
     if (!collection) return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
 
     // Check permissions (admin or creator only)
@@ -129,8 +131,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })().catch((err) => console.error('Error hydrating movie details:', err))
 
     // Re-fetch with updated details
-    const refreshedCollection = await prisma.collection.findUnique({
-      where: { id: collectionId },
+    const refreshedCollection = await prisma.collection.findFirst({
+      where: { id: collectionId, deletedAt: null },
       include: {
         movies: {
           include: {

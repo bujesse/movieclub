@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 import { getIdentityFromRequest } from '../../../../lib/cfAccess'
+import { parseClientLocalDateTimeToUtc } from '../../../../lib/meetupDate'
 import '../../../../lib/bigintSerializer'
 
 export async function GET(req: NextRequest) {
@@ -24,6 +25,9 @@ export async function GET(req: NextRequest) {
   })
 
   const lists = await prisma.movieList.findMany({
+    where: {
+      deletedAt: null,
+    },
     select: {
       id: true,
       title: true,
@@ -59,8 +63,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Meetup date is required' }, { status: 400 })
   }
 
-  const parsedDate = new Date(body.date)
-  if (Number.isNaN(parsedDate.getTime())) {
+  const parsedDate = parseClientLocalDateTimeToUtc(body.date, body.timezoneOffsetMinutes)
+  if (!parsedDate) {
     return NextResponse.json({ error: 'Invalid meetup date' }, { status: 400 })
   }
 
@@ -70,7 +74,9 @@ export async function POST(req: NextRequest) {
       : Number(body.movieListId)
 
   if (movieListId !== null) {
-    const list = await prisma.movieList.findUnique({ where: { id: movieListId } })
+    const list = await prisma.movieList.findFirst({
+      where: { id: movieListId, deletedAt: null },
+    })
     if (!list) {
       return NextResponse.json({ error: 'List not found' }, { status: 404 })
     }

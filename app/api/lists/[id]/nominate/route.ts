@@ -17,6 +17,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'No upcoming meetup to nominate for' }, { status: 400 })
   }
 
+  const list = await prisma.movieList.findFirst({
+    where: { id: movieListId, deletedAt: null },
+    select: { id: true },
+  })
+  if (!list) {
+    return NextResponse.json({ error: 'List not found' }, { status: 404 })
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
       const existingNomination = await tx.nomination.findFirst({
@@ -70,6 +78,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const nextMeetup = await getNextMeetupWithoutList(prisma)
   if (!nextMeetup) {
     return NextResponse.json({ error: 'No upcoming meetup' }, { status: 400 })
+  }
+
+  const list = await prisma.movieList.findFirst({
+    where: { id: movieListId, deletedAt: null },
+    select: { id: true },
+  })
+  if (!list) {
+    return NextResponse.json({ error: 'List not found' }, { status: 404 })
   }
 
   try {

@@ -46,6 +46,9 @@ export async function GET(req: NextRequest) {
     console.log('[GET /api/collections] User:', user.email)
 
     const collections = await prisma.collection.findMany({
+      where: {
+        deletedAt: null,
+      },
       include: {
         movies: {
           include: {
@@ -90,6 +93,7 @@ export async function GET(req: NextRequest) {
             seenCount: 0,
             hasSeen: false,
             inMeetup: false,
+            inActiveMovieList: false,
             oscarNominations: 0,
             oscarWins: 0,
             oscarCategories: null,
@@ -220,8 +224,8 @@ export async function POST(req: NextRequest) {
     })().catch((err) => console.error('Error hydrating movie details:', err))
 
     // Re-fetch with updated details
-    const updatedCollection = await prisma.collection.findUnique({
-      where: { id: collection.id },
+    const updatedCollection = await prisma.collection.findFirst({
+      where: { id: collection.id, deletedAt: null },
       include: {
         movies: {
           include: {

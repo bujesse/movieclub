@@ -31,6 +31,11 @@ function toLocalInputValue(value: string | null) {
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
 }
 
+function getTimezoneOffsetMinutesForLocalValue(value: string) {
+  const date = new Date(value)
+  return date.getTimezoneOffset()
+}
+
 export default function MeetupsAdminClient() {
   const { isAdminMode } = useCurrentUser()
   const [meetups, setMeetups] = useState<MeetupRow[]>([])
@@ -106,6 +111,7 @@ export default function MeetupsAdminClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: newDate,
+          timezoneOffsetMinutes: getTimezoneOffsetMinutesForLocalValue(newDate),
           movieListId: newMovieListId,
         }),
       })
@@ -148,6 +154,7 @@ export default function MeetupsAdminClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: localValue,
+          timezoneOffsetMinutes: getTimezoneOffsetMinutesForLocalValue(localValue),
           movieListId: null,
         }),
       })
@@ -176,6 +183,7 @@ export default function MeetupsAdminClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: meetup.date,
+          timezoneOffsetMinutes: getTimezoneOffsetMinutesForLocalValue(meetup.date),
           movieListId: meetup.movieListId,
         }),
       })

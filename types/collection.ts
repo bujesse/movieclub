@@ -17,6 +17,7 @@ export type EnrichedCollection = CollectionWithMovies & {
       seenCount: number
       hasSeen: boolean
       inMeetup: boolean
+      inActiveMovieList: boolean
       inUnscheduledList: boolean
       oscarNominations: number
       oscarWins: number

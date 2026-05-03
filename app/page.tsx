@@ -107,11 +107,21 @@ function HomePageContent() {
         {loading ? (
           <p className="subtitle">&nbsp;</p>
         ) : hasNominated ? (
-          <p className="subtitle">Vote for your favorite nominated list for the next meetup</p>
+          <p className="subtitle">
+            Vote for your favorite nominated list for the next meetup
+            <br />
+            {filteredAndSortedLists.length !== lists.length
+              ? `${filteredAndSortedLists.length} / ${lists.length} lists`
+              : `${lists.length} lists`}
+          </p>
         ) : (
           <p className="subtitle has-text-danger">
             You haven't nominated a list yet. <a href={ROUTES.LISTS}>Go to All Lists</a> to place
             your nomination.
+            <br />
+            {filteredAndSortedLists.length !== lists.length
+              ? `${filteredAndSortedLists.length} / ${lists.length} lists`
+              : `${lists.length} lists`}
           </p>
         )}
       </div>

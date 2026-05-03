@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
   const lists = await prisma.movieList.findMany({
     where: {
       id: { in: listIds },
+      deletedAt: null,
     },
     include: {
       movies: {

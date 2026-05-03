@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
   const lists = await prisma.movieList.findMany({
     where: {
       Meetup: null,
+      deletedAt: null,
     },
     include: {
       movies: {
@@ -107,8 +108,8 @@ export async function POST(req: NextRequest) {
     await Promise.allSettled(ids.map((id) => saveMovieDetails(id)))
 
     // Re-fetch the list with updated movie details
-    const updatedList = await prisma.movieList.findUnique({
-      where: { id: list.id },
+    const updatedList = await prisma.movieList.findFirst({
+      where: { id: list.id, deletedAt: null },
       include: {
         movies: {
           include: {
