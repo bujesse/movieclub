@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { formatLanguageLabel } from '../lib/language'
 
 interface OscarNomination {
   ceremony: number
@@ -40,6 +41,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
   const [actors, setActors] = useState<any>(null)
   const [voteAverage, setVoteAverage] = useState<number | null>(null)
   const [voteCount, setVoteCount] = useState<number | null>(null)
+  const [originalLanguage, setOriginalLanguage] = useState<string | null>(null)
   const [memberships, setMemberships] = useState<MovieMemberships | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadingMemberships, setLoadingMemberships] = useState(false)
@@ -63,6 +65,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
       setActors(null)
       setVoteAverage(null)
       setVoteCount(null)
+      setOriginalLanguage(null)
       setViewingCeremony(null)
       setMemberships(null)
       setLoadingMemberships(false)
@@ -82,6 +85,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
         setActors(data.actors || null)
         setVoteAverage(data.voteAverage || null)
         setVoteCount(data.voteCount || null)
+        setOriginalLanguage(data.originalLanguage || null)
       } catch (err) {
         console.error(err)
       } finally {
@@ -237,7 +241,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
 
         <section className="modal-card-body">
           {/* Basic Info */}
-          {(runtime || directors || actors || voteAverage) && (
+          {(runtime || directors || actors || voteAverage || originalLanguage) && (
             <div className="mb-4">
               <h3
                 className="subtitle is-5 mb-3 has-text-weight-semibold"
@@ -257,6 +261,13 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                       <strong>
                         {Math.floor(runtime / 60)}h {runtime % 60}m
                       </strong>
+                    </div>
+                  )}
+
+                  {originalLanguage && (
+                    <div>
+                      <span className="has-text-grey-light">Language:</span>{' '}
+                      <strong>{formatLanguageLabel(originalLanguage) ?? originalLanguage}</strong>
                     </div>
                   )}
 

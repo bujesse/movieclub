@@ -9,6 +9,7 @@ import { useListsPage } from '../ListsPageContext'
 import { useCurrentUser } from '../CurrentUserProvider'
 import FilterSortControls from '../FilterSortControls'
 import { formatMinutes } from '../../lib/helpers'
+import { formatLanguageLabel } from '../../lib/language'
 
 type CreditPerson = {
   id?: number
@@ -51,6 +52,7 @@ function ArchivePageContent() {
   const [lists, setLists] = useState<MovieListAllWithFlags[]>([])
   const [loading, setLoading] = useState(true)
   const [hoveredYear, setHoveredYear] = useState<number | null>(null)
+  const [hoveredCredit, setHoveredCredit] = useState<string | null>(null)
 
   const { user } = useCurrentUser()
   const { filter, sortBy, setFilter, setSortBy } = useListsPage()
@@ -90,8 +92,10 @@ function ArchivePageContent() {
 
   const archiveStats = useMemo(() => {
     const winnerCounts = new Map<string, number>()
-    const actorSeenCounts = new Map<string, number>()
-    const directorSeenCounts = new Map<string, number>()
+    const actorMovieCounts = new Map<string, number>()
+    const directorMovieCounts = new Map<string, number>()
+    const actorMovies = new Map<string, string[]>()
+    const directorMovies = new Map<string, string[]>()
     const languageCounts = new Map<string, number>()
     const yearCounts = new Map<number, number>()
     const yearMovies = new Map<number, string[]>()
@@ -117,20 +121,21 @@ function ArchivePageContent() {
         if (seenMovies.has(movie.tmdbId)) continue
         seenMovies.add(movie.tmdbId)
 
-        const seenCount = movie.seenCount ?? 0
         const actors = Array.isArray(movie.actors) ? (movie.actors as CreditPerson[]) : []
         const directors = Array.isArray(movie.directors) ? (movie.directors as CreditPerson[]) : []
 
         for (const actor of actors) {
           const name = actor?.name?.trim()
           if (!name) continue
-          actorSeenCounts.set(name, (actorSeenCounts.get(name) ?? 0) + seenCount)
+          actorMovieCounts.set(name, (actorMovieCounts.get(name) ?? 0) + 1)
+          actorMovies.set(name, [...(actorMovies.get(name) ?? []), movie.title])
         }
 
         for (const director of directors) {
           const name = director?.name?.trim()
           if (!name) continue
-          directorSeenCounts.set(name, (directorSeenCounts.get(name) ?? 0) + seenCount)
+          directorMovieCounts.set(name, (directorMovieCounts.get(name) ?? 0) + 1)
+          directorMovies.set(name, [...(directorMovies.get(name) ?? []), movie.title])
         }
       }
     }
@@ -138,14 +143,14 @@ function ArchivePageContent() {
     const sortedWinners = Array.from(winnerCounts.entries())
       .map(([email, count]) => ({ name: email.split('@')[0], count }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    const sortedActors = Array.from(actorSeenCounts.entries())
-      .map(([name, count]) => ({ name, count }))
+    const sortedActors = Array.from(actorMovieCounts.entries())
+      .map(([name, count]) => ({ name, count, movies: actorMovies.get(name) ?? [] }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    const sortedDirectors = Array.from(directorSeenCounts.entries())
-      .map(([name, count]) => ({ name, count }))
+    const sortedDirectors = Array.from(directorMovieCounts.entries())
+      .map(([name, count]) => ({ name, count, movies: directorMovies.get(name) ?? [] }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     const sortedLanguages = Array.from(languageCounts.entries())
-      .map(([name, count]) => ({ name: name.toUpperCase(), count }))
+      .map(([name, count]) => ({ name: formatLanguageLabel(name) ?? name.toUpperCase(), count }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     const sortedYears = Array.from(yearCounts.entries())
       .map(([year, count]) => ({ year, count }))
@@ -174,12 +179,80 @@ function ArchivePageContent() {
       yearCounts: yearSeries,
       maxYearCount,
       yearTicks,
-      topWinners: sortedWinners.slice(0, 3),
+      topWinners: sortedWinners,
       topActors: sortedActors,
       topDirectors: sortedDirectors,
       topLanguages: sortedLanguages,
     }
   }, [lists])
+
+  const renderHoverableCredits = (
+    entries: Array<{ name: string; count: number; movies: string[] }>,
+    emptyLabel: string,
+    keyPrefix: string
+  ) => {
+    if (entries.length === 0) return emptyLabel
+
+    return entries.slice(0, 5).map((entry, index) => {
+      const hoverKey = `${keyPrefix}:${entry.name}`
+      const isLeftEdge = index === 0
+      const isRightEdge = index === Math.min(entries.length, 5) - 1
+
+      return (
+        <span key={hoverKey}>
+          <span
+            style={{
+              position: 'relative',
+              display: 'inline-block',
+              textDecorationLine: 'underline',
+              textDecorationStyle: 'dotted',
+              textDecorationColor: 'rgba(255,255,255,0.25)',
+              textUnderlineOffset: '0.18em',
+              cursor: 'default',
+            }}
+            onMouseEnter={() => setHoveredCredit(hoverKey)}
+            onMouseLeave={() => setHoveredCredit((current) => (current === hoverKey ? null : current))}
+          >
+            {entry.name} ({entry.count})
+            {hoveredCredit === hoverKey && (
+              <span
+                style={{
+                  position: 'absolute',
+                  left: isLeftEdge ? '0' : isRightEdge ? 'auto' : '50%',
+                  right: isRightEdge ? '0' : 'auto',
+                  bottom: 'calc(100% + 8px)',
+                  transform: isLeftEdge || isRightEdge ? 'translateX(0)' : 'translateX(-50%)',
+                  width: '220px',
+                  padding: '0.45rem 0.55rem',
+                  background: '#20242d',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '8px',
+                  boxShadow: '0 6px 18px rgba(0, 0, 0, 0.25)',
+                  textAlign: 'left',
+                  pointerEvents: 'none',
+                  zIndex: 20,
+                }}
+              >
+                <span
+                  className="has-text-white"
+                  style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, marginBottom: '0.25rem' }}
+                >
+                  {entry.name} · {entry.count}
+                </span>
+                <span
+                  className="has-text-grey-light"
+                  style={{ display: 'block', fontSize: '0.62rem', lineHeight: 1.25 }}
+                >
+                  {entry.movies.join(', ')}
+                </span>
+              </span>
+            )}
+          </span>
+          {index < Math.min(entries.length, 5) - 1 ? ', ' : ''}
+        </span>
+      )
+    })
+  }
 
   return (
     <section className="section">
@@ -220,10 +293,10 @@ function ArchivePageContent() {
               <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
                 <p className="heading mb-1">Most seen actors</p>
                 <p className="title is-6 mb-1" style={{ lineHeight: 1.15 }}>
-                  {formatTopEntries(archiveStats.topActors, 'No actor data', 5)}
+                  {renderHoverableCredits(archiveStats.topActors, 'No actor data', 'actor')}
                 </p>
                 <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
-                  Numbers show total seen marks across archived movies
+                  Numbers show archived movie appearances
                 </p>
               </div>
             </div>
@@ -231,10 +304,14 @@ function ArchivePageContent() {
               <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
                 <p className="heading mb-1">Most seen directors</p>
                 <p className="title is-6 mb-1" style={{ lineHeight: 1.15 }}>
-                  {formatTopEntries(archiveStats.topDirectors, 'No director data', 5)}
+                  {renderHoverableCredits(
+                    archiveStats.topDirectors,
+                    'No director data',
+                    'director'
+                  )}
                 </p>
                 <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
-                  Numbers show total seen marks across archived movies
+                  Numbers show archived movie appearances
                 </p>
               </div>
             </div>
@@ -242,7 +319,11 @@ function ArchivePageContent() {
               <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
                 <p className="heading mb-1">Top languages</p>
                 <p className="title is-6 mb-1" style={{ lineHeight: 1.15 }}>
-                  {formatTopEntries(archiveStats.topLanguages, 'No language data', 5)}
+                  {formatTopEntries(
+                    archiveStats.topLanguages,
+                    'No language data',
+                    archiveStats.topLanguages.length
+                  )}
                 </p>
               </div>
             </div>
@@ -342,7 +423,7 @@ function ArchivePageContent() {
                             display: 'flex',
                             alignItems: 'flex-end',
                             gap: '2px',
-                            padding: '0',
+                            padding: '0 6px 0 0',
                             borderLeft: '1px solid rgba(255, 255, 255, 0.14)',
                             borderBottom: '1px solid rgba(255, 255, 255, 0.14)',
                             overflow: 'visible',
@@ -467,7 +548,7 @@ function ArchivePageContent() {
                           style={{
                             display: 'flex',
                             gap: '2px',
-                            padding: '0.25rem 0 0',
+                            padding: '0.25rem 6px 0 0',
                           }}
                         >
                           {archiveStats.yearCounts.map((entry, index) => {
