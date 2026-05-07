@@ -3,7 +3,6 @@ export const ROUTES = {
   LISTS: '/lists',
   COLLECTIONS: '/collections',
   ARCHIVE: '/archive',
-  HOW_IT_WORKS: '/how-it-works',
   ADMIN_MEETUPS: '/admin/meetups',
 } as const
 

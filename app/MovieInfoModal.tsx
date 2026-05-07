@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Eye, EyeClosed } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { formatLanguageLabel } from '../lib/language'
 
 interface OscarNomination {
@@ -24,6 +26,8 @@ interface MovieInfoModalProps {
     oscarCategories: Record<string, { nominations: number; wins: number }> | null
     budget?: number | string | bigint | null
     revenue?: number | string | bigint | null
+    hasSeen?: boolean
+    seenCount?: number
   } | null
   onClose: () => void
 }
@@ -34,6 +38,7 @@ type MovieMemberships = {
 }
 
 export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModalProps) {
+  const router = useRouter()
   const [nominations, setNominations] = useState<OscarNomination[]>([])
   const [releaseDate, setReleaseDate] = useState<string | null>(null)
   const [runtime, setRuntime] = useState<number | null>(null)
@@ -55,6 +60,9 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
     film: string
   } | null>(null)
   const [loadingWinner, setLoadingWinner] = useState(false)
+  const [hasSeen, setHasSeen] = useState(false)
+  const [seenCount, setSeenCount] = useState(0)
+  const [togglingSeen, setTogglingSeen] = useState(false)
 
   useEffect(() => {
     if (!isOpen || !movie) {
@@ -69,8 +77,13 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
       setViewingCeremony(null)
       setMemberships(null)
       setLoadingMemberships(false)
+      setHasSeen(false)
+      setSeenCount(0)
       return
     }
+
+    setHasSeen(movie.hasSeen === true)
+    setSeenCount(movie.seenCount ?? 0)
 
     const fetchNominations = async () => {
       setLoading(true)
@@ -114,6 +127,37 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
   }, [isOpen, movie])
 
   if (!isOpen || !movie) return null
+
+  const toggleSeen = async () => {
+    if (togglingSeen) return
+
+    const previousHasSeen = hasSeen
+    const previousSeenCount = seenCount
+    const nextHasSeen = !previousHasSeen
+    const nextSeenCount = Math.max(0, previousSeenCount + (previousHasSeen ? -1 : 1))
+
+    setHasSeen(nextHasSeen)
+    setSeenCount(nextSeenCount)
+    setTogglingSeen(true)
+
+    try {
+      const res = await fetch(`/api/movies/${movie.tmdbId}/seen`, {
+        method: previousHasSeen ? 'DELETE' : 'POST',
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to update seen status')
+      }
+
+      router.refresh()
+    } catch (err) {
+      console.error(err)
+      setHasSeen(previousHasSeen)
+      setSeenCount(previousSeenCount)
+    } finally {
+      setTogglingSeen(false)
+    }
+  }
 
   // Fetch winner for a specific ceremony and category
   const fetchWinner = async (ceremony: number, category: string) => {
@@ -661,14 +705,27 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
         </section>
 
         <footer className="modal-card-foot" style={{ justifyContent: 'space-between' }}>
-          <a
-            href={`https://letterboxd.com/tmdb/${movie.tmdbId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="button is-link"
-          >
-            View on Letterboxd
-          </a>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button
+              className={`button ${hasSeen ? 'is-success' : ''}`}
+              onClick={toggleSeen}
+              disabled={togglingSeen}
+              title={hasSeen ? 'Mark as unseen' : 'Mark as seen'}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span>{seenCount}</span>
+                {hasSeen ? <Eye size={18} /> : <EyeClosed size={18} />}
+              </span>
+            </button>
+            <a
+              href={`https://letterboxd.com/tmdb/${movie.tmdbId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button is-link"
+            >
+              View on Letterboxd
+            </a>
+          </div>
           <button className="button" onClick={onClose}>
             Close
           </button>

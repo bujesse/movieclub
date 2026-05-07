@@ -2,11 +2,24 @@
 
 import { useState, useEffect } from 'react'
 import Autocomplete from './Autocomplete'
+import MovieInfoModal from './MovieInfoModal'
 import { searchTmdb } from '../lib/tmdb'
 import type { TmdbMovie } from '../types/tmdb'
 import { tmdbImage } from '../lib/tmdb'
 import { useCurrentUser } from './CurrentUserProvider'
 import type { MovieListAll } from './page'
+
+type SelectedMovie = {
+  tmdbId: number
+  title: string
+  oscarNominations: number
+  oscarWins: number
+  oscarCategories: Record<string, { nominations: number; wins: number }> | null
+  budget?: number | string | null
+  revenue?: number | string | null
+  hasSeen?: boolean
+  seenCount?: number
+}
 
 export default function ListModal({
   isOpen,
@@ -28,6 +41,8 @@ export default function ListModal({
   const [movieInput, setMovieInput] = useState('')
   const [movieArray, setMovieArray] = useState<TmdbMovie[]>([])
   const [meetupMovieTmdbIds, setMeetupMovieTmdbIds] = useState<Set<number>>(new Set())
+  const [selectedMovie, setSelectedMovie] = useState<SelectedMovie | null>(null)
+  const [loadingMovieId, setLoadingMovieId] = useState<number | null>(null)
 
   const [showErrors, setShowErrors] = useState(false)
   const hasMovies = movieArray.length > 0
@@ -80,6 +95,40 @@ export default function ListModal({
     setMovieInput('')
   }
 
+  const handleOpenMovieDetails = async (movie: TmdbMovie) => {
+    setLoadingMovieId(movie.id)
+
+    try {
+      const res = await fetch('/api/movies/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tmdbId: movie.id }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Failed to look up movie')
+      }
+
+      const data = await res.json()
+      setSelectedMovie({
+        tmdbId: data.tmdbId,
+        title: data.title,
+        oscarNominations: data.oscarNominations ?? 0,
+        oscarWins: data.oscarWins ?? 0,
+        oscarCategories: data.oscarCategories ?? null,
+        budget: data.budget ?? null,
+        revenue: data.revenue ?? null,
+        hasSeen: data.hasSeen ?? false,
+        seenCount: data.seenCount ?? 0,
+      })
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingMovieId(null)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!isValid) {
@@ -115,6 +164,8 @@ export default function ListModal({
     setMovieArray([])
     setDescription('')
     setMovieInput('')
+    setSelectedMovie(null)
+    setLoadingMovieId(null)
     onClose()
   }
 
@@ -198,7 +249,20 @@ export default function ListModal({
                           <div className="media-content">
                             <p className="is-size-6 mb-1" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                               <span>
-                                <strong>{movie.title}</strong>{' '}
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenMovieDetails(movie)}
+                                  className="button is-text p-0 has-text-weight-bold"
+                                  style={{
+                                    height: 'auto',
+                                    color: 'inherit',
+                                    textDecoration: 'underline',
+                                    textUnderlineOffset: '0.12em',
+                                  }}
+                                  title="View movie details"
+                                >
+                                  {loadingMovieId === movie.id ? 'Loading...' : movie.title}
+                                </button>{' '}
                                 <small className="has-text-grey">
                                   {movie.release_date?.slice(0, 4) || 'N/A'}
                                 </small>
@@ -269,6 +333,12 @@ export default function ListModal({
           </form>
         </section>
       </div>
+
+      <MovieInfoModal
+        isOpen={selectedMovie !== null}
+        movie={selectedMovie}
+        onClose={() => setSelectedMovie(null)}
+      />
     </div>
   )
 }

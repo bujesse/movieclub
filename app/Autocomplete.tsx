@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 const DEBOUNCE_MS = 500
 
 export default function Autocomplete<T>({
+  inputId,
   placeholder,
   value,
   onChange,
@@ -13,6 +14,7 @@ export default function Autocomplete<T>({
   fetchItems,
   getLabel,
 }: {
+  inputId?: string
   placeholder?: string
   value: string
   onChange: (v: string) => void
@@ -122,6 +124,7 @@ export default function Autocomplete<T>({
     <div className="field" style={{ position: 'relative' }}>
       <div className={`control ${loading ? 'is-loading' : ''}`}>
         <input
+          id={inputId}
           ref={inputRef}
           className="input"
           type="text"

@@ -100,6 +100,7 @@ function ArchivePageContent() {
     const yearCounts = new Map<number, number>()
     const yearMovies = new Map<number, string[]>()
     const seenMovies = new Set<number>()
+    const uniqueMovies = new Set<number>()
     let totalMovieCount = 0
     let totalRuntimeMinutes = 0
 
@@ -109,6 +110,7 @@ function ArchivePageContent() {
 
       for (const movie of list.movies) {
         totalRuntimeMinutes += movie.runtime && movie.runtime > 0 ? movie.runtime : 0
+        uniqueMovies.add(movie.tmdbId)
         const releaseYear = movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : null
         if (releaseYear && Number.isFinite(releaseYear)) {
           yearCounts.set(releaseYear, (yearCounts.get(releaseYear) ?? 0) + 1)
@@ -175,6 +177,8 @@ function ArchivePageContent() {
     return {
       listCount: lists.length,
       totalMovieCount,
+      uniqueMovieCount: uniqueMovies.size,
+      averageMoviesPerList: lists.length > 0 ? totalMovieCount / lists.length : 0,
       totalRuntimeMinutes,
       yearCounts: yearSeries,
       maxYearCount,
@@ -329,7 +333,7 @@ function ArchivePageContent() {
             </div>
             <div className="column is-12-mobile is-4-desktop">
               <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
-                <p className="heading mb-1">Archived lists</p>
+                <p className="heading mb-1">Archived meetups</p>
                 <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
                   {archiveStats.listCount}
                 </p>
@@ -337,9 +341,20 @@ function ArchivePageContent() {
             </div>
             <div className="column is-12-mobile is-4-desktop">
               <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
-                <p className="heading mb-1">Archived movies</p>
+                <p className="heading mb-1">Movie appearances</p>
                 <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
                   {archiveStats.totalMovieCount}
+                </p>
+                <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
+                  Counts every movie slot across archived lists
+                </p>
+              </div>
+            </div>
+            <div className="column is-12-mobile is-4-desktop">
+              <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
+                <p className="heading mb-1">Unique movies</p>
+                <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
+                  {archiveStats.uniqueMovieCount}
                 </p>
               </div>
             </div>
@@ -348,6 +363,14 @@ function ArchivePageContent() {
                 <p className="heading mb-1">Total runtime</p>
                 <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
                   {formatMinutes(archiveStats.totalRuntimeMinutes)}
+                </p>
+              </div>
+            </div>
+            <div className="column is-12-mobile is-4-desktop">
+              <div className="box" style={{ padding: '0.5rem 1.1rem' }}>
+                <p className="heading mb-1">Avg movies per list</p>
+                <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
+                  {archiveStats.averageMoviesPerList.toFixed(1)}
                 </p>
               </div>
             </div>

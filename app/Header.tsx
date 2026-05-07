@@ -181,13 +181,6 @@ export default function Header() {
               Meetups
             </a>
           )}
-          <a
-            className={`navbar-item ${isActiveRoute(pathname, ROUTES.HOW_IT_WORKS) ? 'is-active' : ''}`}
-            href={ROUTES.HOW_IT_WORKS}
-          >
-            How It Works
-          </a>
-
           {/* Filter/Sort Controls - Desktop only, on lists pages */}
           {shouldShowFilterControls(pathname) && isMounted && isReady && (
             <div className="navbar-item is-hidden-touch">

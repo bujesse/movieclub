@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import type { TmdbCreditsResponse, TmdbMovie, TmdbMovieDetails, TmdbResponse } from '../types/tmdb'
 import { prisma } from './prisma'
 
@@ -49,26 +50,93 @@ export async function getMovieDetails(tmdbId: number): Promise<TmdbMovieDetails>
 
 const ACTOR_LIMIT = 10
 
-export async function saveMovieDetails(tmdbId: number) {
-  const details = await getMovieDetails(tmdbId)
-  const credits = await getMovieCredits(tmdbId)
+function toReleaseDate(value: string | null | undefined) {
+  if (!value) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function normalizeGenres(
+  genres: Array<number> | Array<{ id: number }> | null | undefined
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
+  if (!genres) return Prisma.JsonNull
+
+  if (genres.length === 0) {
+    return []
+  }
+
+  if (typeof genres[0] === 'number') {
+    return genres as Prisma.InputJsonValue
+  }
+
+  return (genres as Array<{ id: number }>).map((genre) => genre.id) as Prisma.InputJsonValue
+}
+
+function buildBaseMovieData(
+  movie: {
+    id: number
+    title: string
+    original_title?: string | null
+    original_language?: string | null
+    release_date?: string | null
+    overview?: string | null
+    vote_average?: number | null
+    vote_count?: number | null
+    poster_path?: string | null
+    backdrop_path?: string | null
+    popularity?: number | null
+    runtime?: number | null
+    budget?: number | null
+    revenue?: number | null
+    genres?: Array<number> | Array<{ id: number }> | null
+  }
+) {
+  return {
+    tmdbId: movie.id,
+    title: movie.title,
+    originalTitle: movie.original_title ?? null,
+    originalLanguage: movie.original_language ?? null,
+    releaseDate: toReleaseDate(movie.release_date),
+    overview: movie.overview ?? null,
+    voteAverage: movie.vote_average ?? null,
+    voteCount: movie.vote_count ?? null,
+    posterPath: movie.poster_path ?? null,
+    backdropPath: movie.backdrop_path ?? null,
+    genres: normalizeGenres(movie.genres),
+    runtime: movie.runtime ?? null,
+    popularity: Math.round(movie.popularity ?? 0),
+    budget: movie.budget ?? null,
+    revenue: movie.revenue ?? null,
+  }
+}
+
+async function persistMovieDetails(
+  tmdbId: number,
+  details: TmdbMovieDetails,
+  credits: TmdbCreditsResponse
+) {
   const directorsList = credits.crew.filter((c) => c.job === 'Director')
   const actorsList = credits.cast.sort((a, b) => a.order - b.order).slice(0, ACTOR_LIMIT)
 
-  await prisma.globalMovie.updateMany({
+  await prisma.globalMovie.upsert({
     where: { tmdbId },
-    data: {
-      runtime: details.runtime,
-      originalLanguage: details.original_language,
-      popularity: details.popularity,
-      budget: details.budget,
-      revenue: details.revenue,
-      overview: details.overview,
-      voteAverage: details.vote_average,
-      voteCount: details.vote_count,
-      posterPath: details.poster_path,
-      backdropPath: details.backdrop_path,
-      genres: details.genres,
+    update: {
+      ...buildBaseMovieData(details),
+      directors: directorsList.map((d) => ({
+        id: d.id,
+        name: d.name,
+        credit_id: d.credit_id,
+      })),
+      actors: actorsList.map((a) => ({
+        id: a.id,
+        name: a.name,
+        character: a.character,
+        order: a.order,
+        credit_id: a.credit_id,
+      })),
+    },
+    create: {
+      ...buildBaseMovieData(details),
       directors: directorsList.map((d) => ({
         id: d.id,
         name: d.name,
@@ -83,6 +151,22 @@ export async function saveMovieDetails(tmdbId: number) {
       })),
     },
   })
+}
 
-  return prisma.globalMovie.findMany({ where: { tmdbId } })
+export async function saveMovieDetails(tmdbId: number) {
+  const details = await getMovieDetails(tmdbId)
+  const credits = await getMovieCredits(tmdbId)
+
+  await persistMovieDetails(tmdbId, details, credits)
+
+  return prisma.globalMovie.findUnique({ where: { tmdbId } })
+}
+
+export async function ensureGlobalMovieWithDetails(tmdbId: number) {
+  const details = await getMovieDetails(tmdbId)
+  const credits = await getMovieCredits(tmdbId)
+
+  await persistMovieDetails(tmdbId, details, credits)
+
+  return prisma.globalMovie.findUnique({ where: { tmdbId } })
 }
