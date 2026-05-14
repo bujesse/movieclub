@@ -35,13 +35,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       })
 
       if (existingNomination) {
-        await tx.vote.deleteMany({
+        const nominationCount = await tx.nomination.count({
           where: {
-            userId,
             movieListId: existingNomination.movieListId,
             meetupId: nextMeetup.id,
           },
         })
+
+        if (nominationCount <= 1) {
+          await tx.vote.deleteMany({
+            where: {
+              movieListId: existingNomination.movieListId,
+              meetupId: nextMeetup.id,
+            },
+          })
+        } else {
+          await tx.vote.deleteMany({
+            where: {
+              userId,
+              movieListId: existingNomination.movieListId,
+              meetupId: nextMeetup.id,
+            },
+          })
+        }
 
         await tx.nomination.deleteMany({
           where: {
@@ -89,30 +105,30 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   try {
-    // Check if there are votes from other users
-    const votesFromOthers = await prisma.vote.count({
-      where: {
-        movieListId,
-        meetupId: nextMeetup.id,
-        userId: { not: userId },
-      },
-    })
-
-    if (votesFromOthers > 0) {
-      return NextResponse.json(
-        { error: 'Cannot remove nomination - other users have voted for this list' },
-        { status: 400 }
-      )
-    }
-
     await prisma.$transaction(async (tx) => {
-      await tx.vote.deleteMany({
+      const nominationCount = await tx.nomination.count({
         where: {
-          userId,
           movieListId,
           meetupId: nextMeetup.id,
         },
       })
+
+      if (nominationCount <= 1) {
+        await tx.vote.deleteMany({
+          where: {
+            movieListId,
+            meetupId: nextMeetup.id,
+          },
+        })
+      } else {
+        await tx.vote.deleteMany({
+          where: {
+            userId,
+            movieListId,
+            meetupId: nextMeetup.id,
+          },
+        })
+      }
 
       await tx.nomination.deleteMany({
         where: {
