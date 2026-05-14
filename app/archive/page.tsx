@@ -16,15 +16,6 @@ type CreditPerson = {
   name?: string
 }
 
-function formatTopEntries(
-  entries: Array<{ name: string; count: number }>,
-  emptyLabel: string,
-  limit: number
-) {
-  if (entries.length === 0) return emptyLabel
-  return entries.slice(0, limit).map((entry) => `${entry.name} (${entry.count})`).join(', ')
-}
-
 function getTickValues(maxValue: number) {
   if (maxValue <= 0) return [0]
   if (maxValue <= 4) return Array.from({ length: maxValue + 1 }, (_, index) => index)
@@ -97,6 +88,7 @@ function ArchivePageContent() {
     const actorMovies = new Map<string, string[]>()
     const directorMovies = new Map<string, string[]>()
     const languageCounts = new Map<string, number>()
+    const languageMovies = new Map<string, string[]>()
     const yearCounts = new Map<number, number>()
     const yearMovies = new Map<number, string[]>()
     const seenMovies = new Set<number>()
@@ -105,7 +97,7 @@ function ArchivePageContent() {
     let earliestMeetupTime: number | null = null
     let latestMeetupTime: number | null = null
 
-    for (const list of lists) {
+    for (const list of filteredAndSortedLists) {
       winnerCounts.set(list.createdBy, (winnerCounts.get(list.createdBy) ?? 0) + 1)
       totalMovieCount += list.movies.length
       const meetupDate = (list as any).Meetup?.date ? new Date((list as any).Meetup.date) : null
@@ -129,6 +121,7 @@ function ArchivePageContent() {
         const language = movie.originalLanguage?.trim() || movie.original_language?.trim()
         if (language) {
           languageCounts.set(language, (languageCounts.get(language) ?? 0) + 1)
+          languageMovies.set(language, [...(languageMovies.get(language) ?? []), movie.title])
         }
         if (seenMovies.has(movie.tmdbId)) continue
         seenMovies.add(movie.tmdbId)
@@ -157,12 +150,19 @@ function ArchivePageContent() {
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     const sortedActors = Array.from(actorMovieCounts.entries())
       .map(([name, count]) => ({ name, count, movies: actorMovies.get(name) ?? [] }))
+      .filter((entry) => entry.count > 1)
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     const sortedDirectors = Array.from(directorMovieCounts.entries())
       .map(([name, count]) => ({ name, count, movies: directorMovies.get(name) ?? [] }))
+      .filter((entry) => entry.count > 1)
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    const sortedLanguages = Array.from(languageCounts.entries())
-      .map(([name, count]) => ({ name: formatLanguageLabel(name) ?? name.toUpperCase(), count }))
+  const sortedLanguages = Array.from(languageCounts.entries())
+      .map(([name, count]) => ({
+        key: name,
+        name: formatLanguageLabel(name) ?? name.toUpperCase(),
+        count,
+        movies: languageMovies.get(name) ?? [],
+      }))
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     const sortedYears = Array.from(yearCounts.entries())
       .map(([year, count]) => ({ year, count }))
@@ -186,15 +186,16 @@ function ArchivePageContent() {
     const millisecondsPerWeek = 7 * 24 * 60 * 60 * 1000
     const weeksCovered =
       earliestMeetupTime !== null && latestMeetupTime !== null
-        ? Math.max(1, Math.round((latestMeetupTime - earliestMeetupTime) / millisecondsPerWeek) + 1)
+        ? Math.max(1, (latestMeetupTime - earliestMeetupTime) / millisecondsPerWeek + 1)
         : 1
 
     return {
-      listCount: lists.length,
+      listCount: filteredAndSortedLists.length,
       totalMovieCount,
       totalRuntimeMinutes,
       averageRuntimePerWeek: totalRuntimeMinutes / weeksCovered,
-      averageRuntimePerList: lists.length > 0 ? totalRuntimeMinutes / lists.length : 0,
+      averageRuntimePerList:
+        filteredAndSortedLists.length > 0 ? totalRuntimeMinutes / filteredAndSortedLists.length : 0,
       yearCounts: yearSeries,
       maxYearCount,
       yearTicks,
@@ -203,19 +204,20 @@ function ArchivePageContent() {
       topDirectors: sortedDirectors,
       topLanguages: sortedLanguages,
     }
-  }, [lists])
+  }, [filteredAndSortedLists])
 
-  const renderHoverableCredits = (
-    entries: Array<{ name: string; count: number; movies: string[] }>,
+  const renderHoverableEntries = (
+    entries: Array<{ key?: string; name: string; count: number; movies: string[] }>,
     emptyLabel: string,
-    keyPrefix: string
+    keyPrefix: string,
+    limit = 5
   ) => {
     if (entries.length === 0) return emptyLabel
 
-    return entries.slice(0, 5).map((entry, index) => {
-      const hoverKey = `${keyPrefix}:${entry.name}`
+    return entries.slice(0, limit).map((entry, index) => {
+      const hoverKey = `${keyPrefix}:${entry.key ?? entry.name}`
       const isLeftEdge = index === 0
-      const isRightEdge = index === Math.min(entries.length, 5) - 1
+      const isRightEdge = index === Math.min(entries.length, limit) - 1
 
       return (
         <span key={hoverKey}>
@@ -267,7 +269,7 @@ function ArchivePageContent() {
               </span>
             )}
           </span>
-          {index < Math.min(entries.length, 5) - 1 ? ', ' : ''}
+          {index < Math.min(entries.length, limit) - 1 ? ', ' : ''}
         </span>
       )
     })
@@ -312,7 +314,7 @@ function ArchivePageContent() {
               <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
                 <p className="heading mb-1">Most seen actors</p>
                 <p className="title is-6 mb-1" style={{ lineHeight: 1.15 }}>
-                  {renderHoverableCredits(archiveStats.topActors, 'No actor data', 'actor')}
+                  {renderHoverableEntries(archiveStats.topActors, 'No actor data', 'actor', 10)}
                 </p>
                 <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
                   Numbers show archived movie appearances
@@ -323,10 +325,11 @@ function ArchivePageContent() {
               <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
                 <p className="heading mb-1">Most seen directors</p>
                 <p className="title is-6 mb-1" style={{ lineHeight: 1.15 }}>
-                  {renderHoverableCredits(
+                  {renderHoverableEntries(
                     archiveStats.topDirectors,
                     'No director data',
-                    'director'
+                    'director',
+                    10
                   )}
                 </p>
                 <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
@@ -338,9 +341,10 @@ function ArchivePageContent() {
               <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
                 <p className="heading mb-1">Top languages</p>
                 <p className="title is-6 mb-1" style={{ lineHeight: 1.15 }}>
-                  {formatTopEntries(
+                  {renderHoverableEntries(
                     archiveStats.topLanguages,
                     'No language data',
+                    'language',
                     archiveStats.topLanguages.length
                   )}
                 </p>
@@ -375,17 +379,17 @@ function ArchivePageContent() {
             </div>
             <div className="column is-12-mobile is-4-desktop">
               <div className="box" style={{ padding: '0.5rem 1.1rem' }}>
-                <p className="heading mb-1">Total runtime</p>
+                <p className="heading mb-1">Avg time per list</p>
                 <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
-                  {formatMinutes(archiveStats.totalRuntimeMinutes)}
+                  {formatMinutes(Math.round(archiveStats.averageRuntimePerList))}
                 </p>
               </div>
             </div>
             <div className="column is-12-mobile is-4-desktop">
               <div className="box" style={{ padding: '0.5rem 1.1rem' }}>
-                <p className="heading mb-1">Avg time per list</p>
+                <p className="heading mb-1">Total runtime</p>
                 <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
-                  {formatMinutes(Math.round(archiveStats.averageRuntimePerList))}
+                  {formatMinutes(archiveStats.totalRuntimeMinutes)}
                 </p>
               </div>
             </div>

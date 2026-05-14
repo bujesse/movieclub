@@ -4,8 +4,8 @@ const languageDisplayNames =
     : null
 
 const LANGUAGE_NAME_ALIASES: Record<string, string> = {
-  cn: 'Chinese',
-  zh: 'Chinese',
+  cn: 'Cantonese',
+  zh: 'Mandarin',
 }
 
 export function formatLanguageLabel(code: string | null | undefined) {
