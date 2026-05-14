@@ -100,17 +100,27 @@ function ArchivePageContent() {
     const yearCounts = new Map<number, number>()
     const yearMovies = new Map<number, string[]>()
     const seenMovies = new Set<number>()
-    const uniqueMovies = new Set<number>()
     let totalMovieCount = 0
     let totalRuntimeMinutes = 0
+    let earliestMeetupTime: number | null = null
+    let latestMeetupTime: number | null = null
 
     for (const list of lists) {
       winnerCounts.set(list.createdBy, (winnerCounts.get(list.createdBy) ?? 0) + 1)
       totalMovieCount += list.movies.length
+      const meetupDate = (list as any).Meetup?.date ? new Date((list as any).Meetup.date) : null
+      const meetupTime =
+        meetupDate && !Number.isNaN(meetupDate.getTime()) ? meetupDate.getTime() : null
+
+      if (meetupTime !== null) {
+        earliestMeetupTime =
+          earliestMeetupTime === null ? meetupTime : Math.min(earliestMeetupTime, meetupTime)
+        latestMeetupTime =
+          latestMeetupTime === null ? meetupTime : Math.max(latestMeetupTime, meetupTime)
+      }
 
       for (const movie of list.movies) {
         totalRuntimeMinutes += movie.runtime && movie.runtime > 0 ? movie.runtime : 0
-        uniqueMovies.add(movie.tmdbId)
         const releaseYear = movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : null
         if (releaseYear && Number.isFinite(releaseYear)) {
           yearCounts.set(releaseYear, (yearCounts.get(releaseYear) ?? 0) + 1)
@@ -173,13 +183,18 @@ function ArchivePageContent() {
           )
     const maxYearCount = yearSeries.reduce((max, entry) => Math.max(max, entry.count), 0)
     const yearTicks = getTickValues(maxYearCount)
+    const millisecondsPerWeek = 7 * 24 * 60 * 60 * 1000
+    const weeksCovered =
+      earliestMeetupTime !== null && latestMeetupTime !== null
+        ? Math.max(1, Math.round((latestMeetupTime - earliestMeetupTime) / millisecondsPerWeek) + 1)
+        : 1
 
     return {
       listCount: lists.length,
       totalMovieCount,
-      uniqueMovieCount: uniqueMovies.size,
-      averageMoviesPerList: lists.length > 0 ? totalMovieCount / lists.length : 0,
       totalRuntimeMinutes,
+      averageRuntimePerWeek: totalRuntimeMinutes / weeksCovered,
+      averageRuntimePerList: lists.length > 0 ? totalRuntimeMinutes / lists.length : 0,
       yearCounts: yearSeries,
       maxYearCount,
       yearTicks,
@@ -352,9 +367,9 @@ function ArchivePageContent() {
             </div>
             <div className="column is-12-mobile is-4-desktop">
               <div className="box" style={{ height: '100%', padding: '0.5rem 1.1rem' }}>
-                <p className="heading mb-1">Unique movies</p>
+                <p className="heading mb-1">Avg time per week</p>
                 <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
-                  {archiveStats.uniqueMovieCount}
+                  {formatMinutes(Math.round(archiveStats.averageRuntimePerWeek))}
                 </p>
               </div>
             </div>
@@ -368,9 +383,9 @@ function ArchivePageContent() {
             </div>
             <div className="column is-12-mobile is-4-desktop">
               <div className="box" style={{ padding: '0.5rem 1.1rem' }}>
-                <p className="heading mb-1">Avg movies per list</p>
+                <p className="heading mb-1">Avg time per list</p>
                 <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
-                  {archiveStats.averageMoviesPerList.toFixed(1)}
+                  {formatMinutes(Math.round(archiveStats.averageRuntimePerList))}
                 </p>
               </div>
             </div>
