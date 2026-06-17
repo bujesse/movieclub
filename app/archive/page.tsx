@@ -92,6 +92,8 @@ function ArchivePageContent() {
     const yearCounts = new Map<number, number>()
     const yearMovies = new Map<number, string[]>()
     const seenMovies = new Set<number>()
+    let englishMovieCount = 0
+    let nonEnglishMovieCount = 0
     let totalMovieCount = 0
     let totalRuntimeMinutes = 0
     let earliestMeetupTime: number | null = null
@@ -122,6 +124,11 @@ function ArchivePageContent() {
         if (language) {
           languageCounts.set(language, (languageCounts.get(language) ?? 0) + 1)
           languageMovies.set(language, [...(languageMovies.get(language) ?? []), movie.title])
+          if (language.toLowerCase().startsWith('en')) {
+            englishMovieCount += 1
+          } else {
+            nonEnglishMovieCount += 1
+          }
         }
         if (seenMovies.has(movie.tmdbId)) continue
         seenMovies.add(movie.tmdbId)
@@ -156,7 +163,7 @@ function ArchivePageContent() {
       .map(([name, count]) => ({ name, count, movies: directorMovies.get(name) ?? [] }))
       .filter((entry) => entry.count > 1)
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-  const sortedLanguages = Array.from(languageCounts.entries())
+    const sortedLanguages = Array.from(languageCounts.entries())
       .map(([name, count]) => ({
         key: name,
         name: formatLanguageLabel(name) ?? name.toUpperCase(),
@@ -193,6 +200,8 @@ function ArchivePageContent() {
       listCount: filteredAndSortedLists.length,
       totalMovieCount,
       totalRuntimeMinutes,
+      englishMovieCount,
+      nonEnglishMovieCount,
       averageRuntimePerWeek: totalRuntimeMinutes / weeksCovered,
       averageRuntimePerList:
         filteredAndSortedLists.length > 0 ? totalRuntimeMinutes / filteredAndSortedLists.length : 0,
@@ -348,6 +357,22 @@ function ArchivePageContent() {
                     archiveStats.topLanguages.length
                   )}
                 </p>
+                <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
+                  {archiveStats.englishMovieCount + archiveStats.nonEnglishMovieCount > 0
+                    ? (() => {
+                        const totalLanguageCount =
+                          archiveStats.englishMovieCount + archiveStats.nonEnglishMovieCount
+                        const englishPercentage = Math.round(
+                          (archiveStats.englishMovieCount / totalLanguageCount) * 100
+                        )
+                        const nonEnglishPercentage = Math.round(
+                          (archiveStats.nonEnglishMovieCount / totalLanguageCount) * 100
+                        )
+
+                        return `${archiveStats.englishMovieCount} English / ${archiveStats.nonEnglishMovieCount} non-English (${englishPercentage}% / ${nonEnglishPercentage}%)`
+                      })()
+                    : 'No language ratio yet'}
+                </p>
               </div>
             </div>
             <div className="column is-12-mobile is-4-desktop">
@@ -363,9 +388,6 @@ function ArchivePageContent() {
                 <p className="heading mb-1">Movie appearances</p>
                 <p className="title is-4 mb-0" style={{ lineHeight: 1.05 }}>
                   {archiveStats.totalMovieCount}
-                </p>
-                <p className="has-text-grey is-size-7 mb-0" style={{ lineHeight: 1.2 }}>
-                  Counts every movie slot across archived lists
                 </p>
               </div>
             </div>
