@@ -17,11 +17,10 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid ceremony number' }, { status: 400 })
   }
 
-  const winner = await prisma.oscarNomination.findFirst({
+  const nominations = await prisma.oscarNomination.findMany({
     where: {
       ceremony,
       canonicalCategory: decodeURIComponent(categoryParam),
-      winner: true,
     },
     select: {
       name: true,
@@ -29,8 +28,20 @@ export async function GET(
       year: true,
       tmdbId: true,
       film: true,
+      winner: true,
+      nomId: true,
     },
+    orderBy: [
+      { winner: 'desc' },
+      { film: 'asc' },
+    ],
   })
 
-  return NextResponse.json(winner)
+  const winners = nominations.filter((nomination) => nomination.winner)
+
+  return NextResponse.json({
+    winner: winners[0] ?? null,
+    winners,
+    nominees: nominations.filter((nomination) => !nomination.winner),
+  })
 }

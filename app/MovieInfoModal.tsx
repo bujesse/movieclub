@@ -16,6 +16,22 @@ interface OscarNomination {
   detail: string | null
 }
 
+interface OscarCategoryNominee {
+  nomId: string
+  name: string | null
+  detail: string | null
+  year: string
+  tmdbId: number | null
+  film: string
+  winner: boolean
+}
+
+interface OscarCategoryResult {
+  winner: OscarCategoryNominee | null
+  winners: OscarCategoryNominee[]
+  nominees: OscarCategoryNominee[]
+}
+
 interface MovieInfoModalProps {
   isOpen: boolean
   movie: {
@@ -54,12 +70,8 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
     ceremony: number
     category: string
   } | null>(null)
-  const [winner, setWinner] = useState<{
-    name: string | null
-    detail: string | null
-    film: string
-  } | null>(null)
-  const [loadingWinner, setLoadingWinner] = useState(false)
+  const [categoryResult, setCategoryResult] = useState<OscarCategoryResult | null>(null)
+  const [loadingCategory, setLoadingCategory] = useState(false)
   const [hasSeen, setHasSeen] = useState(false)
   const [seenCount, setSeenCount] = useState(0)
   const [togglingSeen, setTogglingSeen] = useState(false)
@@ -75,6 +87,7 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
       setVoteCount(null)
       setOriginalLanguage(null)
       setViewingCeremony(null)
+      setCategoryResult(null)
       setMemberships(null)
       setLoadingMemberships(false)
       setHasSeen(false)
@@ -159,28 +172,28 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
     }
   }
 
-  // Fetch winner for a specific ceremony and category
-  const fetchWinner = async (ceremony: number, category: string) => {
+  // Fetch the full ballot for a specific ceremony and category
+  const fetchOscarCategory = async (ceremony: number, category: string) => {
     if (viewingCeremony?.ceremony === ceremony && viewingCeremony?.category === category) {
       setViewingCeremony(null)
-      setWinner(null)
+      setCategoryResult(null)
       return
     }
 
-    setLoadingWinner(true)
+    setLoadingCategory(true)
     setViewingCeremony({ ceremony, category })
     try {
       const res = await fetch(
         `/api/oscars/ceremony/${ceremony}/category/${encodeURIComponent(category)}`
       )
-      if (!res.ok) throw new Error('Failed to fetch winner')
+      if (!res.ok) throw new Error('Failed to fetch Oscar category')
       const data = await res.json()
-      setWinner(data)
+      setCategoryResult(data)
     } catch (err) {
       console.error(err)
-      setWinner(null)
+      setCategoryResult(null)
     } finally {
-      setLoadingWinner(false)
+      setLoadingCategory(false)
     }
   }
 
@@ -236,6 +249,57 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
     }
     groupedByClass[nom.class].push(nom)
   })
+
+  const isActingCategory = (className: string, category: string) =>
+    className === 'Acting' || /\b(ACTOR|ACTRESS)\b/.test(category)
+
+  const renderOscarCredit = (
+    name: string | null,
+    detail: string | null,
+    actingCategory: boolean
+  ) => {
+    if (!name && !detail) return null
+
+    if (actingCategory) {
+      if (name && detail) {
+        return (
+          <p className="is-size-7 has-text-grey-light mb-0">
+            <span style={{ color: '#f5f5f5', fontWeight: 700 }}>{name}</span>
+            <span> as </span>
+            <span style={{ fontStyle: 'italic' }}>{detail}</span>
+          </p>
+        )
+      }
+
+      return (
+        <p className="is-size-7 has-text-grey-light mb-0">
+          {name ? (
+            <span style={{ color: '#f5f5f5', fontWeight: 700 }}>{name}</span>
+          ) : (
+            <>
+              <span className="has-text-grey">Role:</span> {detail}
+            </>
+          )}
+        </p>
+      )
+    }
+
+    return (
+      <>
+        {name && (
+          <p className="is-size-7 has-text-grey-light mb-0">
+            <span className="has-text-grey">Nominee:</span>{' '}
+            <span style={{ color: '#f5f5f5', fontWeight: 700 }}>{name}</span>
+          </p>
+        )}
+        {detail && (
+          <p className="is-size-7 has-text-grey-light mb-0">
+            <span className="has-text-grey">Detail:</span> {detail}
+          </p>
+        )}
+      </>
+    )
+  }
 
   const showMembershipsPane =
     loadingMemberships ||
@@ -584,6 +648,13 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                             const isViewing =
                               viewingCeremony?.ceremony === nom.ceremony &&
                               viewingCeremony?.category === nom.canonicalCategory
+                            const clickTitle = nom.winner
+                              ? 'Click to see other nominees'
+                              : 'Click to see winner'
+                            const actingCategory = isActingCategory(
+                              nom.class,
+                              nom.canonicalCategory
+                            )
                             return (
                               <div key={idx}>
                                 <div
@@ -610,41 +681,31 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                       <strong
                                         className="is-size-6"
-                                        {...(!nom.winner && {
-                                          onClick: () =>
-                                            fetchWinner(nom.ceremony, nom.canonicalCategory),
-                                          style: {
-                                            cursor: 'pointer',
-                                            textDecoration: 'underline dotted',
-                                          },
-                                          title: 'Click to see winner',
-                                        })}
+                                        onClick={() =>
+                                          fetchOscarCategory(nom.ceremony, nom.canonicalCategory)
+                                        }
+                                        style={{
+                                          cursor: 'pointer',
+                                          textDecoration: 'underline dotted',
+                                        }}
+                                        title={clickTitle}
                                       >
                                         {nom.canonicalCategory}
                                         {nom.winner && ' 🏆'}
                                       </strong>
-                                      {nom.name && (
-                                        <p className="is-size-7 has-text-grey-light mb-0">
-                                          {nom.name}
-                                        </p>
-                                      )}
-                                      {nom.detail && (
-                                        <p className="is-size-7 has-text-grey-light mt-1 mb-0">
-                                          {nom.detail}
-                                        </p>
-                                      )}
+                                      <div style={{ marginTop: '0.15rem' }}>
+                                        {renderOscarCredit(nom.name, nom.detail, actingCategory)}
+                                      </div>
                                     </div>
                                     <span
                                       className="tag is-dark is-small"
-                                      {...(!nom.winner && {
-                                        onClick: () =>
-                                          fetchWinner(nom.ceremony, nom.canonicalCategory),
-                                        style: { cursor: 'pointer' },
-                                        title: 'Click to see winner',
-                                      })}
+                                      onClick={() =>
+                                        fetchOscarCategory(nom.ceremony, nom.canonicalCategory)
+                                      }
+                                      title={clickTitle}
                                       style={{
                                         flexShrink: 0,
-                                        ...(!nom.winner && { cursor: 'pointer' }),
+                                        cursor: 'pointer',
                                       }}
                                     >
                                       {nom.year} (#{nom.ceremony})
@@ -662,32 +723,76 @@ export default function MovieInfoModal({ isOpen, movie, onClose }: MovieInfoModa
                                       borderLeft: '3px solid #48c78e',
                                     }}
                                   >
-                                    {loadingWinner ? (
+                                    {loadingCategory ? (
                                       <p className="is-size-7 has-text-grey-light">
-                                        Loading winner...
+                                        Loading Oscar category...
                                       </p>
-                                    ) : winner ? (
+                                    ) : categoryResult ? (
                                       <div>
-                                        <p
-                                          className="is-size-7 has-text-weight-bold"
-                                          style={{ color: '#48c78e' }}
-                                        >
-                                          🏆 Winner: {winner.film}
-                                        </p>
-                                        {winner.name && (
-                                          <p className="is-size-7 has-text-grey-light mb-0">
-                                            {winner.name}
-                                          </p>
-                                        )}
-                                        {winner.detail && (
-                                          <p className="is-size-7 has-text-grey-light mb-0">
-                                            {winner.detail}
+                                        {nom.winner ? (
+                                          <>
+                                            <p
+                                              className="is-size-7 has-text-weight-bold"
+                                              style={{ color: '#48c78e' }}
+                                            >
+                                              Other nominees
+                                            </p>
+                                            {categoryResult.nominees.length > 0 ? (
+                                              <div
+                                                style={{
+                                                  display: 'flex',
+                                                  flexDirection: 'column',
+                                                  gap: '0.4rem',
+                                                }}
+                                              >
+                                                {categoryResult.nominees.map((nominee) => (
+                                                  <div key={nominee.nomId}>
+                                                    <p
+                                                      className="is-size-7 mb-0"
+                                                      style={{
+                                                        color: '#f5f5f5',
+                                                        fontWeight: 800,
+                                                      }}
+                                                    >
+                                                      {nominee.film}
+                                                    </p>
+                                                    {renderOscarCredit(
+                                                      nominee.name,
+                                                      nominee.detail,
+                                                      actingCategory
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <p className="is-size-7 has-text-grey-light">
+                                                No other nominees found
+                                              </p>
+                                            )}
+                                          </>
+                                        ) : categoryResult.winner ? (
+                                          <>
+                                            <p
+                                              className="is-size-7 has-text-weight-bold"
+                                              style={{ color: '#48c78e' }}
+                                            >
+                                              🏆 Winner: {categoryResult.winner.film}
+                                            </p>
+                                            {renderOscarCredit(
+                                              categoryResult.winner.name,
+                                              categoryResult.winner.detail,
+                                              actingCategory
+                                            )}
+                                          </>
+                                        ) : (
+                                          <p className="is-size-7 has-text-grey-light">
+                                            No winner found
                                           </p>
                                         )}
                                       </div>
                                     ) : (
                                       <p className="is-size-7 has-text-grey-light">
-                                        No winner found
+                                        No category details found
                                       </p>
                                     )}
                                   </div>
