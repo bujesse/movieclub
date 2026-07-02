@@ -54,6 +54,8 @@ export default function FilterSortControls({
             <option value={ListSort.Default}>Default</option>
             <option value={ListSort.MostSeen}>Most Seen</option>
             <option value={ListSort.LeastSeen}>Least Seen</option>
+            <option value={ListSort.Longest}>Longest Runtime</option>
+            <option value={ListSort.Shortest}>Shortest Runtime</option>
             <option value={ListSort.CreatedDesc}>Newest</option>
             <option value={ListSort.CreatedAsc}>Oldest</option>
             <option value={ListSort.VotesDesc}>All-time Votes</option>

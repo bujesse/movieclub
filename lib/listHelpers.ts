@@ -51,6 +51,21 @@ export function getSortedLists(
   sortBy: ListSort
 ): MovieListAllWithFlags[] {
   const result = [...lists]
+  const defaultTieBreak = (a: MovieListAllWithFlags, b: MovieListAllWithFlags) => {
+    const curVotesA = a.votes?.length ?? 0
+    const curVotesB = b.votes?.length ?? 0
+    if (curVotesB !== curVotesA) return curVotesB - curVotesA
+
+    if ((b.votesTotal ?? 0) !== (a.votesTotal ?? 0))
+      return (b.votesTotal ?? 0) - (a.votesTotal ?? 0)
+
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  }
+  const totalRuntime = (list: MovieListAllWithFlags) =>
+    list.movies.reduce(
+      (sum, movie) => sum + (movie.runtime && movie.runtime > 0 ? movie.runtime : 0),
+      0
+    )
 
   if (sortBy === ListSort.VotesDesc) {
     result.sort((a, b) => {
@@ -62,14 +77,7 @@ export function getSortedLists(
       const avgSeenB = b.movies.reduce((sum, m) => sum + m.seenCount, 0) / b.movies.length
       if (avgSeenB !== avgSeenA) return avgSeenB - avgSeenA
 
-      const curVotesA = a.votes?.length ?? 0
-      const curVotesB = b.votes?.length ?? 0
-      if (curVotesB !== curVotesA) return curVotesB - curVotesA
-
-      if ((b.votesTotal ?? 0) !== (a.votesTotal ?? 0))
-        return (b.votesTotal ?? 0) - (a.votesTotal ?? 0)
-
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      return defaultTieBreak(a, b)
     })
   } else if (sortBy === ListSort.LeastSeen) {
     result.sort((a, b) => {
@@ -77,14 +85,27 @@ export function getSortedLists(
       const avgSeenB = b.movies.reduce((sum, m) => sum + m.seenCount, 0) / b.movies.length
       if (avgSeenA !== avgSeenB) return avgSeenA - avgSeenB
 
-      const curVotesA = a.votes?.length ?? 0
-      const curVotesB = b.votes?.length ?? 0
-      if (curVotesB !== curVotesA) return curVotesB - curVotesA
+      return defaultTieBreak(a, b)
+    })
+  } else if (sortBy === ListSort.Longest) {
+    result.sort((a, b) => {
+      const runtimeA = totalRuntime(a)
+      const runtimeB = totalRuntime(b)
+      if (runtimeB !== runtimeA) return runtimeB - runtimeA
 
-      if ((b.votesTotal ?? 0) !== (a.votesTotal ?? 0))
-        return (b.votesTotal ?? 0) - (a.votesTotal ?? 0)
+      if (b.movies.length !== a.movies.length) return b.movies.length - a.movies.length
 
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      return defaultTieBreak(a, b)
+    })
+  } else if (sortBy === ListSort.Shortest) {
+    result.sort((a, b) => {
+      const runtimeA = totalRuntime(a)
+      const runtimeB = totalRuntime(b)
+      if (runtimeA !== runtimeB) return runtimeA - runtimeB
+
+      if (a.movies.length !== b.movies.length) return a.movies.length - b.movies.length
+
+      return defaultTieBreak(a, b)
     })
   } else if (sortBy === ListSort.CreatedDesc) {
     result.sort((a, b) => {

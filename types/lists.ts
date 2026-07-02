@@ -9,6 +9,8 @@ export enum ListSort {
   VotesDesc = 'votes-desc',
   MostSeen = 'most-seen',
   LeastSeen = 'least-seen',
+  Longest = 'longest',
+  Shortest = 'shortest',
   CreatedDesc = 'created-desc',
   CreatedAsc = 'created-asc',
 }
